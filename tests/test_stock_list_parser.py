@@ -190,6 +190,15 @@ class TestContract2BareCodeDefaultsToStock:
         assert target.display_code == "AAPL"
         assert target.matched_index is None
 
+    @pytest.mark.parametrize("code", ["IBM", "AMD", "ibm"])
+    def test_three_character_us_symbol_is_read_as_vietnamese(self, code: str) -> None:
+        # ADR-0001: Vietnamese code shapes win over other markets' shapes, so a
+        # 3-character symbol is a Vietnamese Instrument, not a US ticker.
+        target = parse_analysis_target(code)
+        assert target.market == "vn"
+        assert target.canonical_id == code.upper()
+        assert target.exchange != "US"
+
     def test_bare_hk_5_digit_is_stock(self) -> None:
         target = parse_analysis_target("00700")
         assert target.asset_type == ParseStatus.STOCK

@@ -389,6 +389,17 @@ def test_instruments_outside_hose_are_rejected_in_this_phase(owner_env, monkeypa
         DataFetcherManager().get_daily_data("SHS", days=30)
 
 
+@pytest.mark.parametrize("code", ["IBM", "AMD"])
+def test_three_character_us_symbols_are_looked_up_as_vietnamese(owner_env, code):
+    # ADR-0001: a 3-character code is a Vietnamese Instrument, never routed to US sources.
+    from data_provider.base import DataFetchError
+
+    with pytest.raises(DataFetchError, match=r"HOSE"):
+        DataFetcherManager().get_daily_data(code, days=30)
+    assert f"{code}.VN" in FakeYahooTicker.requested
+    assert code not in FakeYahooTicker.requested
+
+
 def test_yahoo_listing_without_exchange_name_is_hose(owner_env, monkeypatch):
     original = FakeYahooTicker.history
 
