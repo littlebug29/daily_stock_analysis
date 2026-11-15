@@ -4,7 +4,7 @@ status: accepted
 
 # Multi-user layer on a single-user upstream, billed through each Member's own Provider Key
 
-Upstream is single-user (one admin password, the Owner's LLM keys, one watchlist). We add Members on top: invite-only, signing in with Telegram or Discord, each with their own Watchlist, Schedule, Portfolio and Provider Key, receiving deliveries by DM. Members pay for their own usage by bringing their own LLM key instead of paying the Owner, which keeps the deployment non-commercial (our market data source, vnstock, is licensed for personal and non-commercial use only) and means the Owner never collects money.
+Upstream is single-user (one admin password, the Owner's LLM keys, one watchlist). We add Members on top: invite-only, signing in with Telegram or Discord, each with their own Watchlist, Schedule, Portfolio and Provider Key, receiving deliveries by DM. Members pay for their own usage by bringing their own LLM key instead of paying the Owner, which keeps the deployment non-commercial and means the Owner never collects money. (When this was decided the market data source was vnstock, licensed for personal and non-commercial use only. vnstock was later replaced by provider adapters, with Yahoo Finance first; Yahoo's endpoint and the broker Open APIs considered next are likewise limited to personal use and forbid passing their data to third parties, so the non-commercial reasoning still holds and sharing reports with Members needs checking per provider.)
 
 ## Considered Options
 

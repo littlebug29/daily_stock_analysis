@@ -144,14 +144,14 @@ class IndexRealtimeRoutingTestCase(unittest.TestCase):
         longbridge.name = "LongbridgeFetcher"
         longbridge.priority = 5
         longbridge.is_available_for_request.return_value = True
-        longbridge.get_realtime_quote.return_value = _quote("SPX")
+        longbridge.get_realtime_quote.return_value = _quote("IXIC")
 
         manager = self._manager([yfinance, longbridge])
         with patch("src.config.get_config", return_value=self._config()):
-            quote = manager.get_realtime_quote("SPX")
+            quote = manager.get_realtime_quote("IXIC")
 
         self.assertIsNone(quote)
-        yfinance.get_realtime_quote.assert_called_once_with("SPX")
+        yfinance.get_realtime_quote.assert_called_once_with("IXIC")
         longbridge.get_realtime_quote.assert_not_called()
 
     def test_bare_code_stays_on_stock_path(self):

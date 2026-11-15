@@ -264,7 +264,7 @@ class TestContract3PrefixedUnknownDegradesToStock:
             # user as the offending input; ``normalized_prefix`` is None
             # because the input was NOT accepted as an explicit prefix form.
             ("usfd", "usfd"),
-            ("usm", "usm"),
+            # ("usm", "usm") dropped: 3-character codes are Vietnamese Instruments in this fork (ADR-0001).
             ("usibm", "usibm"),
             ("usamd", "usamd"),
             ("usge", "usge"),
@@ -289,7 +289,7 @@ class TestContract3PrefixedUnknownDegradesToStock:
             # lowercase+dotted bases, lowercase+digit bases alike.
             ("usbrk.b", "usbrk.b"),
             ("usshop.us", "usshop.us"),
-            ("us1", "us1"),
+            # ("us1", "us1") dropped: 3-character codes are Vietnamese Instruments in this fork (ADR-0001).
             ("us1a", "us1a"),
             ("us12a", "us12a"),
             # All-uppercase but invalid US shape (digits in base): ``US1``
@@ -298,7 +298,7 @@ class TestContract3PrefixedUnknownDegradesToStock:
             # normalizer would accept ``1`` as the canonical_id — surfacing
             # an invalid US symbol to callers. The regex-based guard
             # rejects it up-front.
-            ("US1", "US1"),
+            # ("US1", "US1") dropped: 3-character codes are Vietnamese Instruments in this fork (ADR-0001).
             ("US12345", "US12345"),
         ],
     )
@@ -632,8 +632,9 @@ class TestReviewBlockerRegressions:
 
     @pytest.mark.parametrize(
         "ticker",
-        ["SHOP", "HKD", "BJRI", "USM", "SHAK", "USFD", "BJDX", "SZKMY",
-         "AAPL", "TSLA", "BRK", "A", "Z"],
+        # HKD / USM / BRK dropped: 3-character codes are Vietnamese Instruments in this fork (ADR-0001).
+        ["SHOP", "BJRI", "SHAK", "USFD", "BJDX", "SZKMY",
+         "AAPL", "TSLA", "A", "Z"],
     )
     def test_us_ticker_prefix_collision_is_not_split(self, ticker: str) -> None:
         """1-5 letter US tickers must round-trip as US stock, not be split

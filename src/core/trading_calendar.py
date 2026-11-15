@@ -48,6 +48,7 @@ MARKET_TIMEZONE = {
     "jp": "Asia/Tokyo",
     "kr": "Asia/Seoul",
     "tw": "Asia/Taipei",
+    "vn": "Asia/Ho_Chi_Minh",
 }
 
 # P0 market phase baseline (Issue #1386). This is an intentionally small
@@ -133,6 +134,11 @@ def get_market_for_stock(code: str) -> Optional[str]:
         return None
     code = (code or "").strip().upper()
 
+    from src.vn.instruments import is_vn_code
+
+    if is_vn_code(code):
+        return "vn"
+
     from data_provider import is_us_stock_code, is_us_index_code, is_hk_stock_code
 
     if is_us_stock_code(code) or is_us_index_code(code):
@@ -161,6 +167,10 @@ def is_market_open(market: str, check_date: date) -> bool:
     Returns:
         True if trading day (or fail-open), False otherwise
     """
+    if market == "vn":
+        from src.vn import calendar as vn_calendar
+
+        return vn_calendar.is_trading_day(check_date)
     if not _XCALS_AVAILABLE:
         return True
     ex = MARKET_EXCHANGE.get(market)
@@ -180,6 +190,11 @@ def get_trading_dates(market: str, start_date: date, end_date: date) -> Optional
 
     Missing calendars must not turn weekdays or observed quote dates into sessions.
     """
+    if market == "vn":
+        from src.vn import calendar as vn_calendar
+
+        days = vn_calendar.trading_days_between(start_date, end_date)
+        return pd.DatetimeIndex(pd.to_datetime(days)).normalize()
     if not _XCALS_AVAILABLE or market not in MARKET_EXCHANGE:
         return None
     try:
@@ -198,6 +213,11 @@ def get_next_trading_date(market: str, check_date: date) -> Optional[date]:
     exchange-calendars is unavailable, the market is unknown, or the date is
     outside the calendar range, so callers can report "unknown" explicitly.
     """
+    if market == "vn":
+        from src.vn import calendar as vn_calendar
+
+        nxt = vn_calendar.next_trading_day(check_date)
+        return nxt if vn_calendar.is_year_covered(nxt) else None
     if not _XCALS_AVAILABLE:
         return None
     ex = MARKET_EXCHANGE.get(market)
@@ -622,10 +642,15 @@ def get_open_markets_today() -> Set[str]:
     Returns:
         Set of market keys that are trading today
     """
+    from src.vn import calendar as vn_calendar
+
+    vn_open = {"vn"} if vn_calendar.is_trading_day(vn_calendar.today()) else set()
     if not _XCALS_AVAILABLE:
-        return set(MARKET_TIMEZONE)
-    result: Set[str] = set()
+        return (set(MARKET_TIMEZONE) - {"vn"}) | vn_open
+    result: Set[str] = set(vn_open)
     for mkt, tz_name in MARKET_TIMEZONE.items():
+        if mkt == "vn":
+            continue
         try:
             tz = ZoneInfo(tz_name)
             today = datetime.now(tz).date()

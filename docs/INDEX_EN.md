@@ -29,6 +29,7 @@ This is the entry point for project documentation. The README covers the project
 | [Data-source stability diagrams](data-source-stability.md) <sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub> (Chinese-only) | TickPlus (preferred for A-shares / ETFs), existing-source routing, fallback chains and configuration profiles |
 | [Data Center](data-center-diagnostics.md) (Chinese-only) | Read-only provider capabilities, exact dataset/market support, quality states, and runtime priorities |
 | [Market Support And Boundaries](market-support.md) (Chinese-only) | Market coverage, suffix rules, degraded capabilities, and explicit non-goals for A/H/US/JP/KR/TW stocks |
+| [Vietnam market](vietnam.md) | Vietnamese codes, market data providers (yfinance), trading calendar, Price Band, Tick Size and T+2 rules |
 | [Changelog](CHANGELOG.md) | Release notes, capability changes, and migration notes |
 
 ## Configuration
