@@ -35,7 +35,6 @@ PR1 覆盖基础设施与首批代表性配置项：
 - `STOCK_LIST`
 - `LITELLM_MODEL`
 - `LLM_CHANNELS`
-- `FEISHU_WEBHOOK_URL`
 - `WEBUI_HOST`
 
 PR2 继续覆盖高频、易填错配置项：
@@ -55,7 +54,7 @@ PR3 registered-field slice / 阶段性补齐：聚焦 Web 设置页中实际展�
 - 系统运行时（7 字段）：日志级别、调试模式、最大并发、分析间隔、大盘分析开关/市场/配色。
 - AI legacy 与 Anspire 配置：provider 专用多 Key、模型名、温度、Vision 模型、max tokens 与 Anspire LLM 网关字段。
 - 数据源与搜索：TickPlus（A 股 / ETF 首选推荐，含注册链接）、TickFlow、SerpAPI、Brave、Bocha、MiniMax、SearXNG 公共实例、BIAS 阈值和 Pytdx 服务器字段。
-- 通知高级字段：飞书高级安全/应用字段、Telegram topic、Discord/Slack 高级字段、Pushover、ntfy、Gotify、PushPlus、ServerChan3、AstrBot 和自定义 Webhook 高级模板/鉴权字段。
+- 通知高级字段：Telegram topic、Discord/Slack 高级字段、Pushover、ntfy、Gotify 和自定义 Webhook 高级模板/鉴权字段。
 
 Issue #1512 收口后，Web 设置页只展示后端配置注册表中的正式字段。未注册的 `.env` key 不再作为普通可编辑设置项展示，避免 raw key、`Auto-inferred field metadata.` 和无 help 按钮的配置项进入中文界面；这些 key 仍可通过 `.env` 文件或导入/导出能力保留和维护。
 
@@ -75,7 +74,7 @@ Issue #1512 收口后，Web 设置页只展示后端配置注册表中的正式�
 1. `.env.example`：配置键名、默认值、样例格式和敏感占位符。
 2. `docs/full-guide.md`：主要配置说明、运行入口和部署上下文。
 3. `docs/LLM_CONFIG_GUIDE.md`、`docs/llm-providers.md`：LLM 优先级、Channels、provider/model、兼容边界和排障说明。
-4. 专题文档：例如 `docs/bot/feishu-bot-config.md`、`docs/deploy-webui-cloud.md`、`docs/desktop-package.md`。
+4. 专题文档：例如 `docs/bot/discord-bot-config.md`、`docs/deploy-webui-cloud.md`、`docs/desktop-package.md`。
 5. 代码实现和测试：当文档与代码不一致时，先以可执行实现为准，并同步修正文档。
 
 ## 维护边界

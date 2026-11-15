@@ -224,7 +224,7 @@ journalctl -u stock-analyzer -f
 |--------|------|----------|
 | `AIHUBMIX_KEY` / `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `ANSPIRE_API_KEYS` | AI 模型至少配置一个；按需选择服务商 | 对应服务商控制台 |
 | `STOCK_LIST` | 自选股列表 | 逗号分隔的股票代码；已登记指数显式形态（如 `sh000016`、`930606.CSI`、`sz399365`）经一次性 `--stocks` 或 GitHub Actions 入口支持（本地 `.env`/Docker 无参数默认运行保持股票语义，指数需配 `--stocks`），规则见 [指数自选股配置](full-guide.md#指数自选股配置) |
-| 通知渠道 | 至少配置一个，如企业微信、飞书、Telegram 或邮件 | 对应通知平台 |
+| 通知渠道 | 至少配置一个，如 Telegram、Discord 或邮件 | 对应通知平台 |
 
 ### 可选配置项
 
@@ -428,14 +428,11 @@ git push -u origin main
 | `ANTHROPIC_API_KEY` | Anthropic API Key | 可选 |
 | `GEMINI_API_KEY` | Gemini AI API Key | 可选 |
 | `OPENAI_API_KEY` | OpenAI 兼容 API Key | 可选 |
-| `WECHAT_WEBHOOK_URL` | 企业微信机器人 Webhook | 可选* |
-| `FEISHU_WEBHOOK_URL` | 飞书机器人 Webhook | 可选* |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | 可选* |
 | `TELEGRAM_CHAT_ID` | Telegram Chat ID | 可选* |
 | `TELEGRAM_MESSAGE_THREAD_ID` | Telegram Topic ID | 可选* |
 | `EMAIL_SENDER` | 发件人邮箱 | 可选* |
 | `EMAIL_PASSWORD` | 邮箱授权码 | 可选* |
-| `SERVERCHAN3_SENDKEY` | Server酱³ Sendkey | 可选* |
 | `CUSTOM_WEBHOOK_URLS` | 自定义 Webhook（多个逗号分隔） | 可选* |
 | `STOCK_LIST` | 自选股列表，如 `600519,300750` | ✅ |
 | `SERPAPI_API_KEYS` | SerpAPI Key | 推荐 |

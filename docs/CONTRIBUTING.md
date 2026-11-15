@@ -60,7 +60,7 @@ chore: 构建/工具相关
 
 示例：
 ```
-feat: 添加钉钉机器人支持
+feat: 添加 Discord 机器人支持
 fix: 修复 429 限流重试逻辑
 docs: 更新 README 部署说明
 ```
@@ -120,7 +120,7 @@ python scripts/check_cjk_comments.py --show-lines src # 同时输出每一行
 
 查看 [README](../README.md) 了解项目当前的核心能力与主要入口：
 
-- 🔔 新通知渠道（钉钉、飞书、Telegram）
+- 🔔 新通知渠道（Telegram、Discord）
 - 🤖 新 AI 模型支持（GPT-4、Claude）
 - 📊 新数据源接入
 - 🐛 Bug 修复和性能优化

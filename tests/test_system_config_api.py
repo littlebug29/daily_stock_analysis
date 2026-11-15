@@ -845,7 +845,7 @@ class SystemConfigApiTestCase(unittest.TestCase):
                 "latency_ms": 42,
                 "attempts": [
                     {
-                        "channel": "wechat",
+                        "channel": "slack",
                         "success": True,
                         "message": "sent",
                         "target": "https://qyapi.example.com/cgi-bin/webhook/send?key=***",
@@ -860,8 +860,8 @@ class SystemConfigApiTestCase(unittest.TestCase):
         ) as mock_test:
             payload = system_config.test_notification_channel(
                 request=TestNotificationChannelRequest(
-                    channel="wechat",
-                    items=[{"key": "WECHAT_WEBHOOK_URL", "value": "https://example.com/hook"}],
+                    channel="slack",
+                    items=[{"key": "SLACK_WEBHOOK_URL", "value": "https://example.com/hook"}],
                     title="DSA 通知测试",
                     content="hello",
                     timeout_seconds=5,
@@ -870,19 +870,19 @@ class SystemConfigApiTestCase(unittest.TestCase):
             ).model_dump()
 
         self.assertTrue(payload["success"])
-        self.assertEqual(payload["attempts"][0]["channel"], "wechat")
+        self.assertEqual(payload["attempts"][0]["channel"], "slack")
         self.assertEqual(payload["attempts"][0]["latency_ms"], 42)
         mock_test.assert_called_once()
-        self.assertEqual(mock_test.call_args.kwargs["channel"], "wechat")
+        self.assertEqual(mock_test.call_args.kwargs["channel"], "slack")
         self.assertEqual(mock_test.call_args.kwargs["timeout_seconds"], 5)
 
     def test_test_notification_channel_schema_accepts_registered_channels(self) -> None:
-        dingtalk_request = TestNotificationChannelRequest(
-            channel="dingtalk",
+        discord_request = TestNotificationChannelRequest(
+            channel="discord",
             items=[
                 {
-                    "key": "DINGTALK_WEBHOOK_URL",
-                    "value": "https://oapi.dingtalk.com/robot/send?access_token=test",
+                    "key": "DISCORD_WEBHOOK_URL",
+                    "value": "https://discord.com/api/webhooks/1/token",
                 }
             ],
             title="DSA 閫氱煡娴嬭瘯",
@@ -907,7 +907,7 @@ class SystemConfigApiTestCase(unittest.TestCase):
             timeout_seconds=5,
         )
 
-        self.assertEqual(dingtalk_request.channel, "dingtalk")
+        self.assertEqual(discord_request.channel, "discord")
         self.assertEqual(ntfy_request.channel, "ntfy")
         self.assertEqual(gotify_request.channel, "gotify")
 

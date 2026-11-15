@@ -468,12 +468,12 @@ function buildSystemConfigState(overrides: ConfigOverride = {}) {
       ],
       notification: [
         {
-          key: 'WECHAT_WEBHOOK_URL',
-          value: 'https://qyapi.example.com/hook',
+          key: 'DISCORD_WEBHOOK_URL',
+          value: 'https://discord.example.com/hook',
           rawValueExists: true,
           isMasked: false,
           schema: {
-            key: 'WECHAT_WEBHOOK_URL',
+            key: 'DISCORD_WEBHOOK_URL',
             category: 'notification',
             dataType: 'string',
             uiControl: 'password',
@@ -1345,7 +1345,7 @@ describe('SettingsPage', () => {
         { key: 'OPENAI_MODEL', value: 'gpt-draft' },
         { key: 'GEMINI_MODEL', value: 'gemini-draft' },
         { key: 'OLLAMA_API_BASE', value: 'http://localhost:11434' },
-        { key: 'WECHAT_WEBHOOK_URL', value: 'not-a-url' },
+        { key: 'DISCORD_WEBHOOK_URL', value: 'not-a-url' },
       ],
     }));
 
@@ -1363,7 +1363,7 @@ describe('SettingsPage', () => {
       expect(statusItems).toHaveTextContent('GEMINI_MODEL=gemini-draft');
       expect(statusItems).toHaveTextContent('OLLAMA_API_BASE=http://localhost:11434');
       expect(statusItems).not.toHaveTextContent('GENERATION_BACKEND=codex_cli');
-      expect(statusItems).not.toHaveTextContent('WECHAT_WEBHOOK_URL=not-a-url');
+      expect(statusItems).not.toHaveTextContent('DISCORD_WEBHOOK_URL=not-a-url');
     });
   });
 
@@ -2519,8 +2519,8 @@ describe('SettingsPage', () => {
 
     renderSettingsPage();
 
-    expect(screen.getByText('通知测试面板:WECHAT_WEBHOOK_URL')).toBeInTheDocument();
-    expect(screen.getByText('WECHAT_WEBHOOK_URL')).toBeInTheDocument();
+    expect(screen.getByText('通知测试面板:DISCORD_WEBHOOK_URL')).toBeInTheDocument();
+    expect(screen.getByText('DISCORD_WEBHOOK_URL')).toBeInTheDocument();
     expect(settingsPanelErrorBoundary).toHaveBeenCalledWith('通知测试');
     expect(settingsPanelErrorBoundary).toHaveBeenCalledWith('通知设置');
   });

@@ -147,6 +147,8 @@ _SENSITIVE_ENV_PATTERNS = (
     "VERTEX_",
     "WEBHOOK",
 )
+# 已删除渠道（飞书/钉钉/企业微信）的密钥名与 Webhook 主机仍保留在脱敏规则中：
+# 旧 .env 可能仍带有这些值，删除渠道不应降低对它们的脱敏保护（ADR-0001 例外）。
 _SENSITIVE_ENV_EXACT_NAMES = frozenset({
     "AIHUBMIX_KEY",
     "DINGTALK_APP_KEY",

@@ -74,7 +74,7 @@ Grok Bot Skill 正文见 [`docs/examples/grok_bot/SKILL.md`](examples/grok_bot/S
 ## MCP / Connector / computer use
 
 - **MCP**：把上表 REST 包成 tool 即可（`analyze_stock`、`get_latest_signal`、`market_review`）。本仓库暂不内置 MCP server，以免和 FastAPI 契约双源漂移。
-- **Connectors**：Grok Bot 可登录飞书 / 邮件等；DSA 自己的通知渠道仍走 `.env` 里已有的 webhook，不必经 Bot 转发。
+- **Connectors**：Grok Bot 可登录邮件等外部服务；DSA 自己的通知渠道仍走 `.env` 里已有的 webhook，不必经 Bot 转发。
 - **Computer use**：仅当 Bot 的云电脑里已经 clone 并配好 `.env` 时，才适合跑 `python main.py --stocks 600519,AAPL` 或 `python main.py --market-review`。默认仍推荐 HTTP，便于鉴权、超时和异步任务。
 
 ## 认证

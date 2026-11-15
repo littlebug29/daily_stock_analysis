@@ -141,8 +141,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
             "webui_enabled": False,
             "webui_host": "127.0.0.1",
             "webui_port": 8000,
-            "dingtalk_stream_enabled": False,
-            "feishu_stream_enabled": False,
             "schedule_enabled": False,
             "schedule_time": "18:00",
             "schedule_run_immediately": True,
@@ -296,7 +294,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server", side_effect=fake_start_api_server), \
-             patch("main.start_bot_stream_clients"), \
              patch("main.time.sleep", side_effect=KeyboardInterrupt):
             exit_code = main.main()
 
@@ -316,7 +313,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server", side_effect=fake_start_api_server), \
-             patch("main.start_bot_stream_clients"), \
              patch("main.time.sleep", side_effect=KeyboardInterrupt):
             exit_code = main.main()
 
@@ -877,7 +873,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server"), \
-             patch("main.start_bot_stream_clients"), \
              patch("main._refresh_stock_index_cache_for_analysis") as refresh, \
              patch("main._classify_stock_list_tokens") as classify, \
              patch("main.time.sleep", side_effect=KeyboardInterrupt):
@@ -1240,12 +1235,10 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server", side_effect=RuntimeError("port busy")), \
-             patch("main.start_bot_stream_clients") as start_bots, \
              patch("main.logger.error") as error_log:
             exit_code = main.main()
 
         self.assertEqual(exit_code, 1)
-        start_bots.assert_not_called()
         error_log.assert_called_once()
 
     def test_webui_only_maps_to_serve_only_and_exits_when_api_server_start_fails(self) -> None:
@@ -1257,13 +1250,11 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server", side_effect=RuntimeError("port busy")), \
-             patch("main.start_bot_stream_clients") as start_bots, \
              patch("main.run_full_analysis") as run_full_analysis, \
              patch("main.logger.error") as error_log:
             exit_code = main.main()
 
         self.assertEqual(exit_code, 1)
-        start_bots.assert_not_called()
         run_full_analysis.assert_not_called()
         error_log.assert_called_once()
 
@@ -1276,14 +1267,12 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server", side_effect=RuntimeError("port busy")), \
-             patch("main.start_bot_stream_clients") as start_bots, \
              patch("main.run_full_analysis") as run_full_analysis, \
              patch("main._run_analysis_with_runtime_scheduler_lock") as run_with_lock, \
              patch("main.logger.error") as error_log:
             exit_code = main.main()
 
         self.assertEqual(exit_code, 0)
-        start_bots.assert_not_called()
         run_with_lock.assert_called_once_with(config, args, None, None)
         run_full_analysis.assert_not_called()
         error_log.assert_called_once()
@@ -1313,14 +1302,12 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main._build_schedule_time_provider", return_value=lambda: "18:00"), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server", side_effect=RuntimeError("port busy")), \
-             patch("main.start_bot_stream_clients") as start_bots, \
              patch("main.run_full_analysis") as run_full_analysis, \
              patch("src.scheduler.run_with_schedule", side_effect=fake_run_with_schedule), \
              patch("main.logger.error") as error_log:
             exit_code = main.main()
 
         self.assertEqual(exit_code, 0)
-        start_bots.assert_not_called()
         run_full_analysis.assert_called_once_with(config, args, None)
         self.assertEqual(scheduled_call["schedule_time"], "18:00")
         self.assertEqual(scheduled_call["run_immediately"], True)
@@ -1366,7 +1353,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server", side_effect=fake_start_api_server), \
-             patch("main.start_bot_stream_clients") as start_bots, \
              patch("main.time.sleep", side_effect=KeyboardInterrupt), \
              patch("src.scheduler.run_with_schedule") as run_with_schedule:
             exit_code = main.main()
@@ -1383,7 +1369,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
             "no_context_snapshot": True,
             "workers": 4,
         }])
-        start_bots.assert_called_once_with(config)
         run_with_schedule.assert_not_called()
 
     def test_serve_mode_uses_shared_analysis_lock_for_immediate_run_full_analysis(self) -> None:
@@ -1402,7 +1387,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
             patch("main.get_config", return_value=config),
             patch("main.prepare_webui_frontend_assets", return_value=True),
             patch("main.start_api_server"),
-            patch("main.start_bot_stream_clients") as start_bots,
             patch("main.time.sleep", side_effect=KeyboardInterrupt),
             patch("main.run_full_analysis") as run_full_analysis,
             patch("main._run_analysis_with_runtime_scheduler_lock") as run_with_lock,
@@ -1413,7 +1397,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
         self.assertEqual(run_with_lock.call_count, 1)
         run_with_lock.assert_called_once_with(config, args, None, None)
         run_full_analysis.assert_not_called()
-        start_bots.assert_called_once_with(config)
 
     def test_serve_mode_keeps_running_after_futu_portfolio_load_failure(self) -> None:
         args = self._make_args(
@@ -1432,7 +1415,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
             patch("main.get_config", return_value=config),
             patch("main.prepare_webui_frontend_assets", return_value=True),
             patch("main.start_api_server"),
-            patch("main.start_bot_stream_clients") as start_bots,
             patch("main.time.sleep", side_effect=KeyboardInterrupt),
             patch(
                 "main._run_analysis_with_runtime_scheduler_lock",
@@ -1444,7 +1426,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         run_with_lock.assert_called_once_with(config, args, None, None)
-        start_bots.assert_called_once_with(config)
         exception_log.assert_any_call(
             "Futu 持仓导入失败，Web/API 服务继续运行: %s",
             error,
@@ -1488,7 +1469,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server", side_effect=fake_start_api_server), \
-             patch("main.start_bot_stream_clients"), \
              patch("main.time.sleep", side_effect=KeyboardInterrupt), \
              patch("src.scheduler.run_with_schedule") as run_with_schedule:
             exit_code = main.main()
@@ -1530,7 +1510,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server", side_effect=fake_start_api_server), \
-             patch("main.start_bot_stream_clients"), \
              patch("main.time.sleep", side_effect=KeyboardInterrupt), \
              patch("src.scheduler.run_with_schedule") as run_with_schedule:
             exit_code = main.main()
@@ -1566,7 +1545,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \
              patch("main.start_api_server", side_effect=fake_start_api_server), \
-             patch("main.start_bot_stream_clients") as start_bots, \
              patch("main.time.sleep", side_effect=KeyboardInterrupt), \
              patch("src.scheduler.run_with_schedule") as run_with_schedule:
             exit_code = main.main()
@@ -1575,7 +1553,6 @@ class MainScheduleModeTestCase(unittest.TestCase):
         self.assertEqual(marker_seen_by_server, [None])
         self.assertEqual(suppress_seen_by_server, [None])
         self.assertEqual(run_immediately_seen_by_server, ["false"])
-        start_bots.assert_called_once_with(config)
         run_with_schedule.assert_not_called()
 
     def test_reload_runtime_config_preserves_process_env_overrides(self) -> None:
