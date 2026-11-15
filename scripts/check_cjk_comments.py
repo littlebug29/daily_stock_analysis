@@ -172,20 +172,25 @@ _REGEX_PREFIX_WORDS = {
 _LITERAL = "<literal>"
 # Token kind recorded for a property name such as ``foo.return``.
 _PROPERTY = "<property>"
-# A URL scheme right before "//" (JSX text such as <a>http://...</a>).
-_URL_SCHEME_RE = re.compile(r"(?<![\w.])(?:https?|ftps?|wss?|file):$")
+# JSX element or attribute name after "<".
+_JSX_NAME_RE = re.compile(r"[A-Za-z_$][\w$.:-]*")
+# "<T," or "<T extends" after the name is a TSX generic, not an element.
+_TSX_GENERIC_RE = re.compile(r"\s*(?:,|extends\b)")
 
 
 class _CLikeLexer:
     """Tracks code, string, template, regex and comment state for JS/TS/CSS.
 
     ``js=False`` gives the CSS subset: only ``/* */`` comments and quoted strings.
+    ``jsx=True`` skips JSX elements: their text is runtime content, while
+    comments inside ``{...}`` expressions and between attributes still count.
     """
 
-    def __init__(self, source: str, js: bool) -> None:
+    def __init__(self, source: str, js: bool, jsx: bool = False) -> None:
         self.src = source
         self.n = len(source)
         self.js = js
+        self.jsx = jsx
         self.i = 0
         self.line = 1
         self.pieces: List[Piece] = []
@@ -213,11 +218,6 @@ class _CLikeLexer:
                 self.i += 1
                 continue
             two = src[self.i:self.i + 2]
-            if self.js and two == "//" and self._is_url():
-                # Treat the "//" as plain text, never as a regex start.
-                self.i += 2
-                self.prev = _LITERAL
-                continue
             if self.js and two == "//":
                 end = src.find("\n", self.i)
                 self._comment(self.i, self.n if end == -1 else end)
@@ -232,6 +232,9 @@ class _CLikeLexer:
                 continue
             if self.js and c == "`":
                 self._template()
+                self.prev = _LITERAL
+                continue
+            if c == "<" and self.jsx and self._regex_allowed() and self._jsx_element():
                 self.prev = _LITERAL
                 continue
             if self.js and c == "/" and self._regex_allowed():
@@ -257,13 +260,89 @@ class _CLikeLexer:
             self.prev = c
             self.i += 1
 
-    def _is_url(self) -> bool:
-        """True for "//" that follows a known URL scheme and precedes a non-space."""
-        after = self.src[self.i + 2:self.i + 3]
-        if not after or after.isspace():
-            return False
-        line_start = self.src.rfind("\n", 0, self.i) + 1
-        return _URL_SCHEME_RE.search(self.src, line_start, self.i) is not None
+    def _jsx_element(self) -> bool:
+        """Skip a JSX element at "<"; return False, consuming nothing, if it is not one."""
+        start, start_line, start_pieces = self.i, self.line, len(self.pieces)
+        if self.src[self.i + 1:self.i + 2] == ">":
+            self.i += 2  # fragment <>
+        else:
+            name = _JSX_NAME_RE.match(self.src, self.i + 1)
+            if not name or _TSX_GENERIC_RE.match(self.src, name.end()):
+                return False
+            self.i = name.end()
+            self_closing = self._jsx_tag_rest()
+            if self_closing is None:
+                self.i, self.line = start, start_line
+                del self.pieces[start_pieces:]
+                return False
+            if self_closing:
+                return True
+        self._jsx_children()
+        return True
+
+    def _jsx_tag_rest(self) -> Optional[bool]:
+        """Skip attributes up to ">" (False) or "/>" (True); None if not a tag."""
+        src = self.src
+        while self.i < self.n:
+            c = src[self.i]
+            two = src[self.i:self.i + 2]
+            if c == "\n":
+                self.line += 1
+                self.i += 1
+            elif c.isspace() or c == "=":
+                self.i += 1
+            elif two == "/>":
+                self.i += 2
+                return True
+            elif c == ">":
+                self.i += 1
+                return False
+            elif two == "/*":
+                end = src.find("*/", self.i + 2)
+                self._comment(self.i, self.n if end == -1 else end + 2)
+            elif two == "//":
+                end = src.find("\n", self.i)
+                self._comment(self.i, self.n if end == -1 else end)
+            elif c in "\"'":
+                # JSX attribute strings have no escapes.
+                end = src.find(c, self.i + 1)
+                if end == -1:
+                    return None
+                self.line += src.count("\n", self.i, end)
+                self.i = end + 1
+            elif c == "{":
+                self._jsx_expression()
+            else:
+                attr = _JSX_NAME_RE.match(src, self.i)
+                if not attr:
+                    return None
+                self.i = attr.end()
+        return None
+
+    def _jsx_children(self) -> None:
+        """Skip JSX text and child elements up to and including the closing tag."""
+        src = self.src
+        while self.i < self.n:
+            c = src[self.i]
+            if c == "\n":
+                self.line += 1
+            elif c == "{":
+                self._jsx_expression()
+                continue
+            elif c == "<":
+                if src[self.i + 1:self.i + 2] == "/":
+                    end = src.find(">", self.i)
+                    self.i = self.n if end == -1 else end + 1
+                    return
+                if self._jsx_element():
+                    continue
+            self.i += 1
+
+    def _jsx_expression(self) -> None:
+        """Lex a ``{...}`` expression inside JSX as code."""
+        self.i += 1
+        self.prev = "("
+        self._code(stop_at_brace=True)
 
     def _skip_escape(self) -> None:
         """Skip a backslash escape, counting an escaped newline."""
@@ -289,7 +368,7 @@ class _CLikeLexer:
                 self.i += 1
                 return
             if c == "\n":
-                # Unterminated string; JSX text apostrophes end up here.
+                # Unterminated string.
                 return
             self.i += 1
 
@@ -339,7 +418,12 @@ class _CLikeLexer:
 
 
 def scan_js(source: str) -> List[Piece]:
-    """Return comment pieces from TS/TSX/JS/JSX/MJS/CJS source."""
+    """Return comment pieces from TSX/JS/JSX/MJS/CJS source (JSX allowed)."""
+    return _CLikeLexer(source, js=True, jsx=True).run()
+
+
+def scan_ts(source: str) -> List[Piece]:
+    """Return comment pieces from .ts source, where ``<T>x`` is a type assertion."""
     return _CLikeLexer(source, js=True).run()
 
 
@@ -578,7 +662,7 @@ _SCANNERS = {
     ".psm1": scan_powershell,
     ".yml": scan_yaml,
     ".yaml": scan_yaml,
-    ".ts": scan_js,
+    ".ts": scan_ts,
     ".tsx": scan_js,
     ".js": scan_js,
     ".jsx": scan_js,

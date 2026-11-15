@@ -107,7 +107,7 @@ npm run build
 
 ### CJK Comment Checker (report-only)
 
-`scripts/check_cjk_comments.py` scans git-tracked Python, shell, PowerShell, YAML, TS/TSX/JS/JSX/MJS/CJS and CSS files and lists every file with Chinese (CJK ideograph) text in a comment or docstring, with per-file line counts and totals per top-level folder. String literals (including Python f-strings, JS/TS template literals, quoted YAML values and plain YAML block scalars) are runtime data and are never reported; shell/JS comments inside YAML `run: |` / `script: |` blocks are reported, but code in another language embedded in a `run` block (for example `python - <<EOF` or `python -c`) is not inspected. Only git-tracked files are scanned, so `git add` new files first; a path that matches no tracked file prints a warning.
+`scripts/check_cjk_comments.py` scans git-tracked Python, shell, PowerShell, YAML, TS/TSX/JS/JSX/MJS/CJS and CSS files and lists every file with Chinese (CJK ideograph) text in a comment or docstring, with per-file line counts and totals per top-level folder. String literals (including Python f-strings, JS/TS template literals, JSX element text and attribute values, quoted YAML values and plain YAML block scalars) are runtime data and are never reported; shell/JS comments inside YAML `run: |` / `script: |` blocks are reported, but code in another language embedded in a `run` block (for example `python - <<EOF` or `python -c`) is not inspected. Only git-tracked files are scanned, so `git add` new files first; a path that matches no tracked file prints a warning.
 
 ```bash
 python scripts/check_cjk_comments.py                  # whole repository

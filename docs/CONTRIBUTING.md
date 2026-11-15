@@ -104,7 +104,7 @@ npm run build
 
 ### CJK 注释检查（仅报告）
 
-`scripts/check_cjk_comments.py` 扫描 git 已跟踪的 Python、Shell、PowerShell、YAML、TS/TSX/JS/JSX/MJS/CJS、CSS 文件，列出注释或 docstring 中含中文（CJK 汉字）的文件及每个文件的行数，并按顶层目录汇总。字符串字面量（含 Python f-string、JS/TS 模板字符串、YAML 引号值和普通块标量）属于运行时数据，不会被报告；YAML 中 `run: |` / `script: |` 块内的 Shell / JS 注释会被报告，但 `run` 块中再嵌入的其他语言代码（如 `python - <<EOF`、`python -c`）不会被检查。只扫描 git 已跟踪文件，新文件需先 `git add`；指定路径未匹配任何已跟踪文件时会输出警告。
+`scripts/check_cjk_comments.py` 扫描 git 已跟踪的 Python、Shell、PowerShell、YAML、TS/TSX/JS/JSX/MJS/CJS、CSS 文件，列出注释或 docstring 中含中文（CJK 汉字）的文件及每个文件的行数，并按顶层目录汇总。字符串字面量（含 Python f-string、JS/TS 模板字符串、JSX 元素文本与属性值、YAML 引号值和普通块标量）属于运行时数据，不会被报告；YAML 中 `run: |` / `script: |` 块内的 Shell / JS 注释会被报告，但 `run` 块中再嵌入的其他语言代码（如 `python - <<EOF`、`python -c`）不会被检查。只扫描 git 已跟踪文件，新文件需先 `git add`；指定路径未匹配任何已跟踪文件时会输出警告。
 
 ```bash
 python scripts/check_cjk_comments.py                  # 全仓库

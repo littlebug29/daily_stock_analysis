@@ -97,6 +97,38 @@ def test_jsx_text_url_is_not_a_comment():
     assert _lines("a.tsx", source) == [2]
 
 
+def test_jsx_text_double_slash_is_not_a_comment():
+    source = (
+        "const a = <div>说明 // 中文</div>;\n"
+        "const b = (\n"
+        "  <Card title=\"标题 // 属性\" {...props}>\n"
+        "    <>片段 // 文本 `反引号` /* 也是文本 */</>\n"
+        "    {ok && <b>粗体 // 文本</b>}\n"
+        "    {/* 真注释 */}\n"
+        "    <Item\n"
+        "      // 属性间注释\n"
+        "      x={1}\n"
+        "    />\n"
+        "  </Card>\n"
+        ");\n"
+        "// 元素后的注释\n"
+    )
+    assert _lines("a.tsx", source) == [6, 8, 13]
+
+
+@pytest.mark.parametrize(
+    "path,source",
+    [
+        ("a.tsx", "const f = <T,>(x: T) => x; // 泛型\n"),
+        ("a.tsx", "const g = <T extends object>(x: T) => x; // 泛型\n"),
+        ("a.tsx", "const ok = a < b; // 比较\n"),
+        ("a.ts", "const v = <Foo>bar; // 类型断言\n"),
+    ],
+)
+def test_angle_bracket_that_is_not_jsx(path, source):
+    assert _lines(path, source) == [1]
+
+
 @pytest.mark.parametrize(
     "source",
     [
