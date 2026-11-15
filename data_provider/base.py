@@ -169,8 +169,8 @@ def _is_hk_market(code: str) -> bool:
     Decide whether this is an HK stock code.
 
     Supports the ``.HK`` suffix, the ``HK00700`` prefix form, and bare 4-5 digit codes
-    (A-share ETFs/stocks are 6 digits and don't clash with bare 4-5 digit HK codes). ``YfinanceFetcher``,
-    ``AkshareFetcher`` / ``LongbridgeFetcher`` ``_is_hk_code`` and this
+    (A-share ETFs/stocks are 6 digits and don't clash with bare 4-5 digit HK codes). The ``_is_hk_code`` of ``YfinanceFetcher`` /
+    ``AkshareFetcher`` / ``LongbridgeFetcher`` and this
     function keep the same digit-length range for bare HK codes.
     """
     normalized = (code or "").strip().upper()
@@ -544,7 +544,7 @@ class BaseFetcher(ABC):
         except Exception as e:
             elapsed = time.time() - request_start
             error_type, error_reason = summarize_exception(e)
-            # A single data source failing may still be covered by the next one; when all fail, the manager logs the "data source exhausted" ERROR
+            # A single data source failing may still be covered by the next one; when all fail, the manager logs the ERROR tagged as data-source termination
             logger.warning(
                 f"[{self.name}] {stock_code} 获取失败: 范围={start_date} ~ {end_date}, "
                 f"error_type={error_type}, elapsed={elapsed:.2f}s, reason={error_reason}"

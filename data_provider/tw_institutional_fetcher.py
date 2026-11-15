@@ -19,7 +19,7 @@ Fail-open contract: any network error, rate-limit, empty response, unexpected
 shape or missing field returns ``None`` (no data) — it never raises into the
 caller, so the analysis main flow is never interrupted.
 
-Units are **shares**, not lots (1 lot = 1,000 shares). Buy/sell-net signs are preserved
+Units are **shares**, not lots. Buy/sell-net signs are preserved
 (negative = net sell).
 """
 
