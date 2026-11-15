@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
 
 import markdown2
+from src.report_language import ENGLISH_SCAFFOLD_LANGUAGES
 
 
 PROJECT_URL = "https://github.com/ZhuLinsen/daily_stock_analysis"
@@ -1276,7 +1277,7 @@ def _stock_data_from_payload(
 def _market_title(markdown_text: str) -> str:
     first_title = next((title for title, _body, _level in _extract_sections(markdown_text)), "")
     language = _poster_language(markdown_text)
-    if language in {"en", "ko"} and _is_market_review_title(first_title):
+    if language in ENGLISH_SCAFFOLD_LANGUAGES and _is_market_review_title(first_title):
         return first_title
     market = _market_label(first_title)
     if market:

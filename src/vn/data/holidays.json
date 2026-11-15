@@ -1,0 +1,23 @@
+{
+  "_comment": "Weekday market closures announced by HOSE/HNX. Update every year when the exchanges publish the calendar. Years not listed fall back to weekday-only checks (fail-open, logged).",
+  "years": {
+    "2026": {
+      "source": "HOSE announcements as reported by thitruongtaichinhtiente.vn, thuvienphapluat.vn, baophapluat.vn (verify against hsx.vn)",
+      "closures": [
+        {"date": "2026-01-01", "name": "Tết Dương lịch"},
+        {"date": "2026-01-02", "name": "Tết Dương lịch (hoán đổi)"},
+        {"date": "2026-02-16", "name": "Tết Nguyên đán Bính Ngọ"},
+        {"date": "2026-02-17", "name": "Tết Nguyên đán Bính Ngọ"},
+        {"date": "2026-02-18", "name": "Tết Nguyên đán Bính Ngọ"},
+        {"date": "2026-02-19", "name": "Tết Nguyên đán Bính Ngọ"},
+        {"date": "2026-02-20", "name": "Tết Nguyên đán Bính Ngọ"},
+        {"date": "2026-04-27", "name": "Giỗ Tổ Hùng Vương (nghỉ bù)"},
+        {"date": "2026-04-30", "name": "Ngày Giải phóng miền Nam"},
+        {"date": "2026-05-01", "name": "Quốc tế Lao động"},
+        {"date": "2026-08-31", "name": "Quốc khánh"},
+        {"date": "2026-09-01", "name": "Quốc khánh"},
+        {"date": "2026-09-02", "name": "Quốc khánh"}
+      ]
+    }
+  }
+}

@@ -255,9 +255,9 @@ class TestAnalyzeCommandDispatcherGate(unittest.TestCase):
     def test_parser_unsupported_malformed_code_returns_error_without_submission(
         self,
     ):
-        """A non-CSI parser-UNSUPPORTED malformed code shape (``us1``) must
-        return an explicit error and never submit a task."""
-        response, stub = self._dispatch("/analyze us1")
+        """A non-CSI parser-UNSUPPORTED malformed code shape (``us1a``) must
+        return an explicit error and never submit a task (3-character codes are Vietnamese Instruments in this fork (ADR-0001), so ``us1`` no longer qualifies)."""
+        response, stub = self._dispatch("/analyze us1a")
         self.assertIn("无法分析", response.text)
         self.assertEqual(len(stub.calls), 0)
 

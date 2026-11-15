@@ -988,6 +988,7 @@ class Config:
     # === 数据源 API Token ===
     tushare_token: Optional[str] = None
     tickplus_api_key: Optional[str] = None
+    vn_data_providers: List[str] = field(default_factory=list)  # Vietnam: providers in priority order; empty = default
     tickplus_priority: int = 0
     tickflow_api_key: Optional[str] = None
     tickflow_kline_adjust: str = "none"
@@ -1923,6 +1924,9 @@ class Config:
             feishu_folder_token=os.getenv('FEISHU_FOLDER_TOKEN'),
             tushare_token=os.getenv('TUSHARE_TOKEN'),
             tickplus_api_key=os.getenv('TICKPLUS_API_KEY'),
+            vn_data_providers=[
+                name.strip().lower() for name in (os.getenv('VN_DATA_PROVIDERS') or '').split(',') if name.strip()
+            ],
             tickplus_priority=parse_env_int(os.getenv('TICKPLUS_PRIORITY'), 0, field_name='TICKPLUS_PRIORITY', minimum=0),
             tickflow_api_key=os.getenv('TICKFLOW_API_KEY'),
             tickflow_kline_adjust=normalize_tickflow_kline_adjust(os.getenv('TICKFLOW_KLINE_ADJUST')),

@@ -1,5 +1,9 @@
 # 市场支持与边界
 
+## 越南 HOSE/HNX/UPCoM（Vietnam fork, #2）
+
+越南代码（3 位股票代码、E1V/FUE 开头 ETF、VNINDEX/VN30/HNXINDEX/UPCOMINDEX）优先于其他市场的代码形态识别；3 位代码一律视为越南标的。行情经可插拔的数据提供方适配器（`VN_DATA_PROVIDERS`，默认 `yfinance`，按顺序回退）获取；当前阶段仅支持 HOSE（股票/ETF 与 VN-Index）；HNX/UPCoM 标的与指数会以“giai đoạn này chỉ hỗ trợ HOSE”明确拒绝，后续阶段再开放。覆盖权证与期货直接拒绝。交易日历、涨跌幅、最小报价单位与 T+2 规则见 [vietnam.md](vietnam.md)（英文，未提供中文版：本 fork 面向越南用户）。
+
 ## 日本/韩国个股 suffix-only MVP（Issue #1718，Refs #1718）
 
 当前阶段支持手动输入日本、韩国股票的 Yahoo Finance 后缀代码，进入既有个股分析、历史保存和基础报告展示链路。Web 自动补全内置一批常用日股/韩股种子索引，支持按 suffix 代码、中英文名称或常用别名搜索。

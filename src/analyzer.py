@@ -22,6 +22,7 @@ import litellm
 from json_repair import repair_json
 from litellm import Router
 
+from src.report_language import ENGLISH_SCAFFOLD_LANGUAGES
 from src.agent.llm_adapter import (
     get_thinking_extra_body,
     resolve_fallback_litellm_wire_models,
@@ -131,6 +132,8 @@ def _localized_text(language: Any, *, en: str, zh: str, ko: str) -> str:
         return en
     if normalized == "ko":
         return ko
+    if normalized == "vi":
+        return en
     return zh
 
 
@@ -206,7 +209,7 @@ _QUOTE_LABELS_EN = {
 def _phase_aware_quote_labels(context: Dict[str, Any], report_language: str = "zh") -> Tuple[str, str]:
     """Choose quote-table labels that do not conflict with phase context."""
     section_title, close_label = _phase_aware_quote_labels_zh(context)
-    if normalize_report_language(report_language) in ("en", "ko"):
+    if normalize_report_language(report_language) in ENGLISH_SCAFFOLD_LANGUAGES:
         return _QUOTE_LABELS_EN[section_title], _QUOTE_LABELS_EN[close_label]
     return section_title, close_label
 
@@ -285,11 +288,11 @@ def _legacy_audit_marker_specs(
     add("stock_code", code)
     add("stock_name", stock_name)
     add("analysis_date", context.get("date"))
-    add("market_phase", "## Market Phase Context" if report_language in ("en", "ko") else "## 市场阶段上下文")
-    add("daily_market_context", "## Daily Market Context" if report_language in ("en", "ko") else "## 大盘环境摘要")
-    add("market_structure_context", "## Market Structure Context" if report_language in ("en", "ko") else "## 市场结构上下文")
+    add("market_phase", "## Market Phase Context" if report_language in ENGLISH_SCAFFOLD_LANGUAGES else "## 市场阶段上下文")
+    add("daily_market_context", "## Daily Market Context" if report_language in ENGLISH_SCAFFOLD_LANGUAGES else "## 大盘环境摘要")
+    add("market_structure_context", "## Market Structure Context" if report_language in ENGLISH_SCAFFOLD_LANGUAGES else "## 市场结构上下文")
     add("analysis_context_pack", analysis_context_pack_summary)
-    english = report_language in ("en", "ko")
+    english = report_language in ENGLISH_SCAFFOLD_LANGUAGES
     add("quote", "## 📈 Technical Data" if english else "## 📈 技术面数据")
     news_marker = "## 📰 News Intelligence" if english else "## 📰 舆情情报"
     add("news_context", news_marker if news_context else None)
@@ -829,7 +832,7 @@ def _sanitize_trend_analysis_for_prompt(
     language: str = "zh",
 ) -> Dict[str, Any]:
     """Clean prompt-only trend hints on a derived copy without touching runtime/provider config."""
-    english = normalize_report_language(language) in ("en", "ko")
+    english = normalize_report_language(language) in ENGLISH_SCAFFOLD_LANGUAGES
     trend_dict = dict(trend) if isinstance(trend, dict) else {}
     signal_reasons = _normalize_prompt_reason_items(trend_dict.get("signal_reasons"))
     risk_factors = _normalize_prompt_reason_items(trend_dict.get("risk_factors"))
@@ -2688,7 +2691,7 @@ Output strictly in the following JSON format. This is a complete Decision Dashbo
         skill_instructions, default_skill_policy, use_legacy_default_prompt = self._get_skill_prompt_sections()
         # Korean reuses the English scaffolding (same as market review / context pack);
         # the Korean output directive is appended below.
-        use_english_template = lang in ("en", "ko")
+        use_english_template = lang in ENGLISH_SCAFFOLD_LANGUAGES
         if use_legacy_default_prompt:
             legacy_template = (
                 self.LEGACY_DEFAULT_SYSTEM_PROMPT_EN if use_english_template else self.LEGACY_DEFAULT_SYSTEM_PROMPT
@@ -2726,6 +2729,10 @@ Output strictly in the following JSON format. This is a complete Decision Dashbo
 - Use the common English company name when you are confident; otherwise keep the original listed company name instead of inventing one.
 - This includes `stock_name`, `trend_prediction`, `operation_advice`, `confidence_level`, nested dashboard text, checklist items, and all narrative summaries.
 """
+        if lang == "vi":
+            from src.vn.prompting import VI_OUTPUT_DIRECTIVE
+
+            return base_prompt + VI_OUTPUT_DIRECTIVE
         if lang == "ko":
             return base_prompt + """
 
@@ -4372,7 +4379,7 @@ Output strictly in the following JSON format. This is a complete Decision Dashbo
         report_language = normalize_report_language(report_language)
         # Structural template language: Korean reuses the English scaffolding and only
         # the final output-language directive differs (#2352).
-        english = report_language in ("en", "ko")
+        english = report_language in ENGLISH_SCAFFOLD_LANGUAGES
         _, _, use_legacy_default_prompt = self._get_skill_prompt_sections()
         
         # 优先使用上下文中的股票名称（从 realtime_quote 获取）
@@ -4743,7 +4750,7 @@ Output strictly in the following JSON format. This is a complete Decision Dashbo
             chip_instruction = (
                 "Do not fabricate profit ratio, average cost, or concentration. Mention chip data "
                 "unavailability only once in the report; do not repeat per-field no-data text in `chip_structure`."
-                if report_language in ("en", "ko")
+                if report_language in ENGLISH_SCAFFOLD_LANGUAGES
                 else "请勿编造获利比例、平均成本或集中度；报告中只说明一次筹码数据不可用，不要把“数据缺失，无法判断”逐字段重复写入 `chip_structure`。"
             )
             chip_section_title = (
@@ -5136,7 +5143,7 @@ Output the complete Decision Dashboard in JSON format."""
         """格式化成交量显示"""
         if volume is None:
             return 'N/A'
-        if normalize_report_language(report_language) in ("en", "ko"):
+        if normalize_report_language(report_language) in ENGLISH_SCAFFOLD_LANGUAGES:
             return f"{self._format_scaled_number_en(volume)} shares"
         if volume >= 1e8:
             return f"{volume / 1e8:.2f} 亿股"
@@ -5149,7 +5156,7 @@ Output the complete Decision Dashboard in JSON format."""
         """格式化成交额显示"""
         if amount is None:
             return 'N/A'
-        if normalize_report_language(report_language) in ("en", "ko"):
+        if normalize_report_language(report_language) in ENGLISH_SCAFFOLD_LANGUAGES:
             return self._format_scaled_number_en(amount)
         if amount >= 1e8:
             return f"{amount / 1e8:.2f} 亿元"
@@ -5192,6 +5199,12 @@ Output the complete Decision Dashboard in JSON format."""
         today = context.get('today', {}) or {}
         realtime = context.get('realtime', {}) or {}
         yesterday = context.get('yesterday', {}) or {}
+        # Vietnamese reports take the language-neutral units (shares / plain numbers) instead of
+        # Chinese 万股/亿; other languages keep upstream's snapshot format.
+        configured_language = context.get('report_language') or getattr(
+            getattr(self, 'config', None), 'report_language', 'zh'
+        )
+        snapshot_language = 'vi' if normalize_report_language(configured_language) == 'vi' else 'zh'
 
         prev_close = yesterday.get('close')
         close = today.get('close')
@@ -5221,8 +5234,8 @@ Output the complete Decision Dashboard in JSON format."""
             "pct_chg": self._format_percent(today.get('pct_chg')),
             "change_amount": self._format_price(change_amount),
             "amplitude": self._format_percent(amplitude),
-            "volume": self._format_volume(today.get('volume')),
-            "amount": self._format_amount(today.get('amount')),
+            "volume": self._format_volume(today.get('volume'), snapshot_language),
+            "amount": self._format_amount(today.get('amount'), snapshot_language),
         }
 
         if realtime:
@@ -5247,7 +5260,7 @@ Output the complete Decision Dashboard in JSON format."""
     def _build_integrity_complement_prompt(self, missing_fields: List[str], report_language: str = "zh") -> str:
         """Build complement instruction for missing mandatory fields."""
         report_language = normalize_report_language(report_language)
-        if report_language in ("en", "ko"):
+        if report_language in ENGLISH_SCAFFOLD_LANGUAGES:
             lines = ["### Completion requirements: fill the missing mandatory fields below and output the full JSON again:"]
             for f in missing_fields:
                 if f == "sentiment_score":
@@ -5318,7 +5331,7 @@ Output the complete Decision Dashboard in JSON format."""
         """Build retry prompt using the previous response as the complement baseline."""
         complement = self._build_integrity_complement_prompt(missing_fields, report_language=report_language)
         previous_output = previous_response.strip()
-        if normalize_report_language(report_language) in ("en", "ko"):
+        if normalize_report_language(report_language) in ENGLISH_SCAFFOLD_LANGUAGES:
             prefix = "### The previous output is below. Complete the missing fields based on that output and return the full JSON again. Do not omit existing fields:"
         else:
             prefix = "### 上一次输出如下，请在该输出基础上补齐缺失字段，并重新输出完整 JSON。不要省略已有字段："

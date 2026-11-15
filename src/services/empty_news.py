@@ -46,6 +46,10 @@ _DISCLOSURES = {
     "zh": (_ZH_NOT_CONFIGURED, _ZH_ZERO_RESULTS),
     "en": (_EN_NOT_CONFIGURED, _EN_ZERO_RESULTS),
     "ko": (_KO_NOT_CONFIGURED, _KO_ZERO_RESULTS),
+    "vi": (
+        "⚠️ Chưa cấu hình nguồn tin tức; phân tích này chưa dùng bằng chứng từ tin tức.",
+        "⚠️ Lần này không lấy được dữ liệu tin tức; các kết luận dưới đây chưa dùng bằng chứng từ tin tức.",
+    ),
 }
 
 if set(_DISCLOSURES) != set(SUPPORTED_REPORT_LANGUAGES):

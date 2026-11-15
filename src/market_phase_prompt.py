@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+from src.report_language import ENGLISH_SCAFFOLD_LANGUAGES
 
 
 _PHASE_LABELS_ZH = {
@@ -58,7 +59,7 @@ def format_market_phase_prompt_section(
 
     # Korean reuses the English structural context; the output-language
     # directive (see decision agent) constrains the model to write in Korean.
-    lang = "en" if str(report_language or "").lower() in {"en", "ko"} else "zh"
+    lang = "en" if str(report_language or "").lower() in ENGLISH_SCAFFOLD_LANGUAGES else "zh"
     raw_phase = market_phase_context.get("phase")
     phase = raw_phase if isinstance(raw_phase, str) and raw_phase in _KNOWN_PHASES else "unknown"
 

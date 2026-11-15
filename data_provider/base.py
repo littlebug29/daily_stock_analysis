@@ -244,7 +244,11 @@ def _is_meaningful_chip_distribution(chip: Any) -> bool:
 
 
 def _market_tag(code: str) -> str:
-    """返回市场标签: cn/us/hk/jp/kr/tw."""
+    """返回市场标签: vn/cn/us/hk/jp/kr/tw."""
+    from src.vn.instruments import is_vn_code
+
+    if is_vn_code(code):
+        return "vn"
     if _is_us_market(code):
         return "us"
     if _is_hk_market(code):
@@ -648,6 +652,7 @@ class DataFetcherManager:
         "BaostockFetcher": {"cn"},
         "YfinanceFetcher": {"cn", "hk", "us", "jp", "kr", "tw"},
         "LongbridgeFetcher": {"hk", "us"},
+        "VnMarketFetcher": {"vn"},
         "FutuFetcher": {"hk"},
         "FinnhubFetcher": {"us"},
         "AlphaVantageFetcher": {"us"},
@@ -1893,11 +1898,20 @@ class DataFetcherManager:
         else:
             logger.debug("[数据源初始化] 跳过未配置的 AlphaVantageFetcher")
 
+        # Vietnam (ADR-0001): provider adapters in VN_DATA_PROVIDERS order (default: yfinance, no key needed).
+        from .vn_market.fetcher import VnMarketFetcher, build_providers
+
+        vn_providers = build_providers(config)
+        vn_fetchers: List[BaseFetcher] = [VnMarketFetcher(vn_providers)] if vn_providers else []
+        if not vn_providers:
+            logger.warning("[数据源初始化] VN_DATA_PROVIDERS names no known provider; Vietnamese codes will fail")
+
         # 初始化数据源列表
         self._ensure_concurrency_guards()
         with self._fetchers_lock:
             tickplus_key = (getattr(config, "tickplus_api_key", None) or "").strip()
             self._fetchers = [
+                *vn_fetchers,
                 *([TickPlusFetcher(tickplus_key, getattr(config, "tickplus_priority", 0))] if tickplus_key else []),
                 efinance,
                 akshare,
@@ -1916,6 +1930,52 @@ class DataFetcherManager:
         priority_info = ", ".join([f"{f.name}(P{f.priority})" for f in self._get_fetchers_snapshot()])
         logger.info(f"已初始化 {len(self._fetchers)} 个数据源（按优先级）: {priority_info}")
     
+    # ------------------------------------------------------------- Vietnam
+    def _vn_fetcher(self):
+        """The fetcher serving Vietnamese codes (ADR-0001); it falls back across its providers itself."""
+        return next((f for f in self._get_fetchers_snapshot() if getattr(f, "market", None) == "vn"), None)
+
+    def _require_vn_fetcher(self, code: str):
+        fetcher = self._vn_fetcher()
+        if fetcher is None:
+            raise DataSourceUnavailableError(
+                f"{code}: no Vietnamese data provider configured; check VN_DATA_PROVIDERS (e.g. yfinance)"
+            )
+        return fetcher
+
+    def get_vn_instrument(self, stock_code: str):
+        """Resolve a Vietnamese code to its Instrument (Exchange, name), or None if no provider knows it."""
+        fetcher = self._vn_fetcher()
+        return fetcher.get_instrument(stock_code) if fetcher is not None else None
+
+    def _get_vn_daily_data(
+        self, stock_code: str, start_date: Optional[str], end_date: Optional[str], days: int
+    ) -> Tuple[pd.DataFrame, str]:
+        from src.vn.instruments import canonical_code
+
+        code = canonical_code(stock_code)
+        fetcher = self._require_vn_fetcher(code)
+        try:
+            df = fetcher.get_daily_data(code, start_date=start_date, end_date=end_date, days=days)
+        except Exception as exc:
+            record_provider_run(
+                data_type="daily_data",
+                provider=fetcher.name,
+                operation="get_daily_data",
+                success=False,
+                error_type=type(exc).__name__,
+                error_message=exc,
+            )
+            raise
+        record_provider_run(data_type="daily_data", provider=fetcher.name, operation="get_daily_data", success=True)
+        return df, fetcher.name
+
+    def _get_vn_realtime_quote(self, stock_code: str):
+        from src.vn.instruments import canonical_code
+
+        fetcher = self._vn_fetcher()
+        return fetcher.get_realtime_quote(canonical_code(stock_code)) if fetcher is not None else None
+
     def add_fetcher(self, fetcher: BaseFetcher) -> None:
         """添加数据源并重新排序"""
         self._ensure_concurrency_guards()
@@ -1967,6 +2027,8 @@ class DataFetcherManager:
         if target.asset_type == ParseStatus.UNSUPPORTED:
             reason = target.unsupported_reason or "unsupported analysis target"
             raise DataFetchError(f"{raw_stock_code}: {reason}")
+        if target.market == "vn":
+            return self._get_vn_daily_data(raw_stock_code, start_date, end_date, days)
         if target.asset_type == ParseStatus.INDEX:
             return self._get_cn_index_daily_data(
                 target,
@@ -2229,11 +2291,15 @@ class DataFetcherManager:
         normalized_codes: List[str] = []
         for code in stock_codes:
             target = parse_analysis_target(code)
+            if target.market == "vn":
+                continue  # Vietnamese quotes are fetched per code by the VN route, never via A-share bulk prefetch
             if target.asset_type == ParseStatus.INDEX:
                 normalized_codes.append(target.canonical_id)
             else:
                 normalized_codes.append(normalize_stock_code(code))
         stock_codes = normalized_codes
+        if not stock_codes:
+            return 0
 
         from src.config import get_config
 
@@ -2347,6 +2413,9 @@ class DataFetcherManager:
 
     def prefetch_daily_klines(self, stock_codes: List[str], days: int = 30) -> int:
         """Batch-prefetch TickFlow daily K-lines without changing per-stock callers."""
+        stock_codes = [code for code in stock_codes if _market_tag(code) != "vn"]  # A-share only
+        if not stock_codes:
+            return 0
         fetcher = self._get_fetcher_by_name("TickFlowFetcher", capability="daily_data")
         if fetcher is None or not hasattr(fetcher, "prefetch_daily_klines"):
             return 0
@@ -2460,6 +2529,10 @@ class DataFetcherManager:
             UnifiedRealtimeQuote 对象，所有数据源都失败则返回 None
         """
         raw_stock_code = (stock_code or "").strip()
+        from src.vn.instruments import is_vn_code
+
+        if is_vn_code(raw_stock_code):
+            return self._get_vn_realtime_quote(raw_stock_code)
         # Normalize code (strip SH/SZ prefix etc.)
         stock_code = normalize_stock_code(stock_code)
 
@@ -2970,6 +3043,8 @@ class DataFetcherManager:
         Returns:
             ChipDistribution 对象，失败则返回 None
         """
+        if _market_tag(stock_code) == "vn":
+            return None  # chip distribution is an A-share capability
         # Normalize code (strip SH/SZ prefix etc.)
         stock_code = normalize_stock_code(stock_code)
 
@@ -3088,6 +3163,11 @@ class DataFetcherManager:
         Returns:
             股票中文名称，所有数据源都失败则返回 None
         """
+        from src.vn.instruments import is_vn_code
+
+        if is_vn_code(stock_code):
+            instrument = self.get_vn_instrument(stock_code)
+            return (instrument.name or instrument.code) if instrument else None
         raw_stock_code = (stock_code or "").strip()
         target = analysis_target if analysis_target is not None else parse_analysis_target(raw_stock_code)
         self._warn_bare_index_conflict(target)
@@ -4329,6 +4409,12 @@ class DataFetcherManager:
 
         stock_code = normalize_stock_code(stock_code)
         market = _market_tag(stock_code)
+        if market == "vn":
+            # Vietnamese fundamentals are not wired yet; never fall through to A-share adapters.
+            return self._build_market_not_supported(
+                market="vn",
+                reason="Vietnamese fundamentals are not supported yet",
+            )
         is_etf = _is_etf_code(stock_code)
         if market in {"us", "hk", "jp", "kr", "tw"}:
             return self._build_offshore_fundamental_context(

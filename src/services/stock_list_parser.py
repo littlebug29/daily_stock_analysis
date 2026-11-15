@@ -280,6 +280,9 @@ class AnalysisTarget:
     display_code: str
     exchange: str  # 'SH' / 'SZ' / 'BJ' / 'HK' / 'US' / 'UNKNOWN'
     unsupported_reason: Optional[str] = None
+    # Market the code belongs to when known up front ("vn" for Vietnamese codes);
+    # the Vietnamese Exchange (HOSE/HNX/UPCoM) is only known after listing lookup.
+    market: Optional[str] = None
     # Diagnostic breadcrumbs — not part of the public contract, but kept so
     # downstream phases can render sane error UI without re-parsing.
     normalized_prefix: Optional[str] = None
@@ -675,6 +678,34 @@ def parse_analysis_target(
     # a blank white-list — review blocker ``OR-COR-403bd018``.
     if registry is None:
         registry = default_index_registry()
+
+    # Vietnam-only product (ADR-0001): Vietnamese codes win over other markets'
+    # code shapes (e.g. 3-letter US symbols). VN Indices route through the Vietnam
+    # fetcher like Instruments, so they are classified as ``stock`` here.
+    from src.vn.instruments import classify as _classify_vn
+
+    vn_code = _classify_vn(raw)
+    if vn_code is not None:
+        if not vn_code.supported:
+            return AnalysisTarget(
+                raw_input=raw_input,
+                asset_type=ParseStatus.UNSUPPORTED,
+                canonical_id=vn_code.code,
+                display_code=vn_code.code,
+                exchange="UNKNOWN",
+                unsupported_reason=vn_code.rejection_reason,
+                market="vn",
+                normalized_code=vn_code.code,
+            )
+        return AnalysisTarget(
+            raw_input=raw_input,
+            asset_type=ParseStatus.STOCK,
+            canonical_id=vn_code.code,
+            display_code=vn_code.code,
+            exchange="UNKNOWN",
+            market="vn",
+            normalized_code=vn_code.code,
+        )
 
     # Resolve explicit index keys (canonical/display/alias) BEFORE generic
     # stock normalization, so ``csi930955`` / ``930955.CSI`` and other explicit

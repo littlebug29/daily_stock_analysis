@@ -35,6 +35,10 @@ KO_ZERO_HIT_DISCLOSURE = (
     "⚠️ 이번 분석에서 사용 가능한 뉴스 데이터를 가져오지 못해 "
     "아래 결론에는 뉴스 근거를 반영하지 않았습니다."
 )
+VI_NO_CHANNEL_DISCLOSURE = "⚠️ Chưa cấu hình nguồn tin tức; phân tích này chưa dùng bằng chứng từ tin tức."
+VI_ZERO_HIT_DISCLOSURE = (
+    "⚠️ Lần này không lấy được dữ liệu tin tức; các kết luận dưới đây chưa dùng bằng chứng từ tin tức."
+)
 KO_NO_CHANNEL_DISCLOSURE = (
     "⚠️ 뉴스 검색 채널이 설정되지 않아 이번 분석에는 "
     "뉴스 근거를 반영하지 않았습니다."
@@ -314,6 +318,7 @@ class SupportedLanguageDisclosureTestCase(unittest.TestCase):
         "zh": (NO_CHANNEL_DISCLOSURE, ZERO_HIT_DISCLOSURE),
         "en": (EN_NO_CHANNEL_DISCLOSURE, EN_ZERO_HIT_DISCLOSURE),
         "ko": (KO_NO_CHANNEL_DISCLOSURE, KO_ZERO_HIT_DISCLOSURE),
+        "vi": (VI_NO_CHANNEL_DISCLOSURE, VI_ZERO_HIT_DISCLOSURE),
     }
 
     def setUp(self):
