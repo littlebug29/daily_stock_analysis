@@ -76,6 +76,22 @@ jobs:
       - name: 🤖 Check AI governance assets
         run: python scripts/check_ai_assets.py
 
+  cjk-comments:
+    name: cjk-comments (report-only)
+    runs-on: ubuntu-latest
+    # Report-only: never blocks the build. Add --fail-on-findings once the
+    # translation batches are done.
+    continue-on-error: true
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v5
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: 🈶 Report CJK text in comments and docstrings
+        run: python scripts/check_cjk_comments.py
+
   backend-tests:
     name: backend-tests (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest

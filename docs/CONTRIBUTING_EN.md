@@ -78,7 +78,7 @@ docs: update README deployment section
 
 After opening a PR, CI will automatically run the following PR checks:
 
-PRs that only change ordinary `docs/**`, non-governance Markdown, or `LICENSE` keep lightweight change detection, governance validation, and gate summarization, while skipping the three backend test shards, Docker, Web, and desktop packaging. Contract documentation, static API specifications, and Markdown fixtures read directly by offline tests still trigger backend tests. Governance assets such as `AGENTS.md`, `.github/instructions/**`, and `.claude/skills/**` are still validated by `ai-governance`; runtime-affecting text files such as configuration, dependency, and workflow files still run their corresponding full checks.
+PRs that only change ordinary `docs/**`, non-governance Markdown, or `LICENSE` keep lightweight change detection, governance validation, gate summarization, and the report-only `cjk-comments` check, while skipping the three backend test shards, Docker, Web, and desktop packaging. Contract documentation, static API specifications, and Markdown fixtures read directly by offline tests still trigger backend tests. Governance assets such as `AGENTS.md`, `.github/instructions/**`, and `.claude/skills/**` are still validated by `ai-governance`; runtime-affecting text files such as configuration, dependency, and workflow files still run their corresponding full checks.
 
 | Check | Description | Required |
 |-------|-------------|:--------:|
@@ -86,6 +86,7 @@ PRs that only change ordinary `docs/**`, non-governance Markdown, or `LICENSE` k
 | `docker-build` | Docker image build and key module import smoke test | ✅ |
 | `web-gate` | `npm run lint` + `npm run build` (triggered when `apps/dsa-web/` changes) | ✅ (when triggered) |
 | `pr-review` | Automatic PR triggering is temporarily paused. Maintainers can still run it by PR number through `workflow_dispatch`; it reads PR metadata and diff through the GitHub API and never checks out or executes fork PR code. | ❌ (advisory) |
+| `cjk-comments` | `scripts/check_cjk_comments.py` reports files that still have Chinese (CJK) text in comments or docstrings (report-only) | ❌ (advisory) |
 
 Separately, the repository also has a non-blocking `network-smoke` workflow in `.github/workflows/network-smoke.yml`, but it is only triggered by `schedule` and `workflow_dispatch`, not by pull requests.
 
@@ -103,6 +104,20 @@ npm ci
 npm run lint
 npm run build
 ```
+
+### CJK Comment Checker (report-only)
+
+`scripts/check_cjk_comments.py` scans git-tracked Python, shell, PowerShell, YAML, TS/TSX/JS/JSX/MJS/CJS and CSS files and lists every file with Chinese (CJK ideograph) text in a comment or docstring, with per-file line counts and totals per top-level folder. String literals (including Python f-strings, JS/TS template literals, quoted YAML values and plain YAML block scalars) are runtime data and are never reported; shell/JS comments inside YAML `run: |` / `script: |` blocks are reported, but code in another language embedded in a `run` block (for example `python - <<EOF` or `python -c`) is not inspected. Only git-tracked files are scanned, so `git add` new files first; a path that matches no tracked file prints a warning.
+
+```bash
+python scripts/check_cjk_comments.py                  # whole repository
+python scripts/check_cjk_comments.py src tests        # selected paths only
+python scripts/check_cjk_comments.py --show-lines src # also print each line
+```
+
+It exits 0 by default; `--fail-on-findings` exits 1 when non-allowlisted findings remain (not enabled in CI yet). The `cjk-comments` CI job runs in report-only mode and never fails the build.
+
+Deliberate exceptions go in `scripts/cjk_comment_allowlist.txt`, one per line: `<path-glob>[:<line>[-<line>]] | <reason>`. Paths are repository-relative POSIX paths matched with `fnmatch` (`*` also matches `/`), the reason is required, and lines starting with `#` are comments.
 
 ### Documentation Sync Rule
 
