@@ -1,0 +1,12 @@
+# Allowlist for scripts/check_cjk_comments.py.
+#
+# One entry per line:  <path-glob>[:<line>[-<line>]] | <reason>
+#   - <path-glob> is a repository-relative POSIX path matched with fnmatch
+#     ("*" also matches "/", so "tests/fixtures/*" covers the whole folder).
+#   - An optional ":<line>" or ":<start>-<end>" limits the entry to those lines.
+#   - The reason after "|" is required.
+# Lines starting with "#" and blank lines are ignored.
+#
+# Examples:
+#   src/legacy/vendor_adapter.py | vendored upstream code, keep as-is
+#   tests/test_parser.py:42 | comment documents the exact Chinese input under test

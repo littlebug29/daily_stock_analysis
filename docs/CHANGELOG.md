@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- [chore] 新增仅报告模式的 `scripts/check_cjk_comments.py` 与 CI `cjk-comments` job，列出注释 / docstring 中仍含中文的文件（忽略字符串字面量，支持路径过滤与 `scripts/cjk_comment_allowlist.txt` 豁免），为后续注释英文化提供进度依据。
 - [新功能] Vietnam tracer bullet (#2), HOSE phase: HOSE stocks/ETFs and VN-Index (HNX/UPCoM rejected with a reason until later phases); Vietnamese codes take precedence over other markets' code shapes and route to market data provider adapters (`VN_DATA_PROVIDERS`, default `yfinance`, no key; tried in order, empty answers fall through); covered warrants and futures rejected; Vietnamese trading calendar from a repo holiday list (2026, Tết included, Asia/Ho_Chi_Minh); `REPORT_LANGUAGE=vi` reports with Mua/Theo dõi/Bán signals; Trade Plan prices rounded to Tick Size, buy zones kept inside the next Price Band, out-of-band exits flagged, T+2 Settlement Lag noted, and a visible note when the rules can't be applied. See docs/vietnam.md.
 - [修复] 实时行情基准仅接受同交易日的有效日期；Yahoo 行情使用未复权价格并区分交易日与更新时间，避免除息日涨跌方向错误及误报过期。
 
