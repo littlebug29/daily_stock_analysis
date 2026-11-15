@@ -243,8 +243,8 @@ def _is_star_market(symbol: str) -> bool:
 def _lots_to_shares(volume: Any, symbol: str = "") -> Any:
     """Convert Tencent daily K-line volume to shares.
 
-    Tencent reports volume in lots (手, 100 shares) for most A-shares, but in
-    shares (股) for STAR Market stocks (688/689). Multiplying STAR Market volume
+    Tencent reports volume in lots (1 lot = 100 shares) for most A-shares, but in
+    plain shares for STAR Market stocks (688/689). Multiplying STAR Market volume
     by 100 inflates it 100x (Refs #2350).
     """
     try:
