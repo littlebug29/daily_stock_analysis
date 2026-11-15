@@ -78,10 +78,17 @@ class TestIsUsStockCode(unittest.TestCase):
 
     def test_common_us_stocks(self):
         """Common US stock codes should return True"""
-        stocks = ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMD', 'NVDA', 'META', 'AMZN']
+        # AMD dropped: 3-character codes are Vietnamese Instruments in this fork (ADR-0001).
+        stocks = ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'NVDA', 'META', 'AMZN']
         for code in stocks:
             with self.subTest(code=code):
                 self.assertTrue(is_us_stock_code(code), f"{code} should be a US stock")
+
+    def test_three_character_codes_are_vietnamese(self):
+        """3-character codes belong to the Vietnamese market in this fork (ADR-0001)."""
+        for code in ('AMD', 'FPT', 'IBM'):
+            with self.subTest(code=code):
+                self.assertFalse(is_us_stock_code(code))
 
     def test_stock_with_dot_suffix(self):
         """Stock codes with dot suffix (e.g. BRK.B) should return True"""

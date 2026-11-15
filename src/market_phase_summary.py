@@ -8,6 +8,7 @@ from datetime import datetime
 from collections.abc import Mapping
 from typing import Any, Dict, List, Optional
 
+from src.report_language import ENGLISH_SCAFFOLD_LANGUAGES
 from src.core.trading_calendar import MarketPhase, build_market_phase_context, get_market_for_stock
 
 
@@ -191,7 +192,7 @@ def format_public_phase_pack_excerpt(
     if not phase_summary and not overview:
         return ""
     # Korean reuses the English structural summary; output language is set by directive.
-    lang = "en" if str(report_language or "").lower().startswith(("en", "ko")) else "zh"
+    lang = "en" if str(report_language or "").lower().startswith(ENGLISH_SCAFFOLD_LANGUAGES) else "zh"
     source_label = _source_label(source, lang)
 
     lines: List[str] = []
@@ -248,7 +249,7 @@ def format_public_market_status_line(
         return ""
 
     # Korean reuses the English structural summary; output language is set by directive.
-    lang = "en" if str(report_language or "").lower().startswith(("en", "ko")) else "zh"
+    lang = "en" if str(report_language or "").lower().startswith(ENGLISH_SCAFFOLD_LANGUAGES) else "zh"
     phase_labels = _PHASE_LABELS_EN if lang == "en" else _PHASE_LABELS_ZH
     market_labels = _MARKET_LABELS_EN if lang == "en" else _MARKET_LABELS_ZH
     phase_label = phase_labels.get(phase, phase)

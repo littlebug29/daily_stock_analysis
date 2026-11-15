@@ -28,6 +28,7 @@
 | [数据源稳定性与故障处理图示](data-source-stability.md) | TickPlus（A 股 / ETF 首选）、Tushare、TickFlow、AkShare、Efinance、YFinance、Longbridge 等已接入源的使用场景、fallback 链路和推荐配置 |
 | [数据中心](data-center-diagnostics.md) | 只读 Provider 能力、数据集质量、精确市场支持与运行时优先级 |
 | [市场支持与边界](market-support.md) | A股/港股/美股/日股/韩股/台股的可用数据、suffix 规则、降级边界与不承诺项 |
+| [Vietnam market](vietnam.md)（英文） | 越南 HOSE/HNX/UPCoM 代码、行情数据提供方（yfinance）、交易日历、涨跌幅与最小报价单位、T+2 |
 | [更新日志](CHANGELOG.md) | 版本变化、能力调整和迁移说明 |
 
 ## 配置

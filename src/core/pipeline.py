@@ -25,6 +25,7 @@ from typing import List, Dict, Any, Optional, Tuple, Callable
 
 import pandas as pd
 
+from src.report_language import ENGLISH_SCAFFOLD_LANGUAGES
 from src.config import FUNDAMENTAL_STAGE_TIMEOUT_SECONDS_DEFAULT, get_config, Config
 from src.storage import get_db
 from data_provider import DataFetcherManager
@@ -939,6 +940,9 @@ class StockAnalysisPipeline:
                 )
 
             if result:
+                self._apply_vn_trade_plan_rules(result, code, context, enhanced_context, realtime_quote)
+
+            if result:
                 self._append_daily_data_source(result, context, analysis_target)
 
             # Step 8: 保存分析历史记录
@@ -1616,7 +1620,7 @@ class StockAnalysisPipeline:
                 initial_context["analysis_context_pack_summary"] = analysis_context_pack_summary
 
             # 运行 Agent
-            if report_language in ("en", "ko"):
+            if report_language in ENGLISH_SCAFFOLD_LANGUAGES:
                 message = f"Analyze stock {code} ({stock_name}) and return the full decision dashboard JSON."
             else:
                 message = f"请分析股票 {code} ({stock_name})，并生成决策仪表盘报告。"
@@ -3357,6 +3361,50 @@ class StockAnalysisPipeline:
 
         return context
     
+    def _apply_vn_trade_plan_rules(
+        self,
+        result: AnalysisResult,
+        code: str,
+        context: Dict[str, Any],
+        enhanced_context: Dict[str, Any],
+        realtime_quote: Any,
+    ) -> None:
+        """Round the Trade Plan to Tick Size around the next Price Band (Vietnam only).
+
+        The next session's Reference Price comes from today's final daily bar, so the
+        band is exact for Post-close Runs; intraday runs fall back to the live price.
+        """
+        from src.vn import trade_plan
+        from src.vn.instruments import CodeKind, is_vn_code
+        from src.vn.rules import next_reference_price
+
+        if not is_vn_code(code):
+            return
+        language = getattr(result, "report_language", None) or getattr(self.config, "report_language", "vi")
+        try:
+            instrument = self.fetcher_manager.get_vn_instrument(code)
+            if instrument is not None and instrument.kind is CodeKind.INDEX:
+                return  # Indices have no Trade Plan to place
+            if instrument is None or instrument.exchange is None:
+                trade_plan.note_rules_not_applied(result, language)
+                logger.warning("[VN trade plan] %s: Exchange unknown; Trade Plan left unadjusted", code)
+                return
+            # The stored daily bar carries the session's Traded Value (UPCoM reference);
+            # the realtime overlay in enhanced_context may not.
+            today = (context or {}).get("today") or enhanced_context.get("today") or {}
+            close = today.get("close") or getattr(realtime_quote, "price", None)
+            reference = next_reference_price(
+                instrument.exchange, close, today.get("amount"), today.get("volume"), instrument.kind
+            )
+            if reference is not None and trade_plan.apply(result, instrument, reference, language=language):
+                logger.info("[VN trade plan] %s normalised to %s rules (reference %s)", code, instrument.exchange, reference)
+            else:
+                trade_plan.note_rules_not_applied(result, language)
+                logger.warning("[VN trade plan] %s: no Reference Price; Trade Plan left unadjusted", code)
+        except Exception as exc:  # never fail a report over post-processing, but say so in it
+            trade_plan.note_rules_not_applied(result, language)
+            logger.warning("[VN trade plan] %s skipped: %s", code, exc)
+
     def process_single_stock(
         self,
         code: str,

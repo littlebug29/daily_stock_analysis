@@ -1510,6 +1510,13 @@ class NotificationService(
                             f"| 🎊 {labels['take_profit_label']} | {self._clean_sniper_value(sniper.get('take_profit', 'N/A'))} |",
                             "",
                         ])
+                    vn_rules = battle.get('vn_trade_rules')
+                    if isinstance(vn_rules, dict) and vn_rules:
+                        from src.vn.report import format_trade_rules_lines
+
+                        report_lines.extend(format_trade_rules_lines(vn_rules, report_language))
+                    elif battle.get('vn_trade_rules_not_applied'):
+                        report_lines.extend([f"⚠️ {battle['vn_trade_rules_not_applied']}", ""])
                     # 仓位策略
                     position = battle.get('position_strategy', {})
                     if position:

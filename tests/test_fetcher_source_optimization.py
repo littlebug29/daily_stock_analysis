@@ -150,6 +150,8 @@ class TestFetcherSourceOptimization(unittest.TestCase):
                 "BaostockFetcher",
                 "YfinanceFetcher",
                 "TencentFetcher",
+                # Vietnam fork: the default VN provider (yfinance) needs no configuration.
+                "VnMarketFetcher",
             ],
         )
         mock_tushare.assert_not_called()

@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
+from src.report_language import ENGLISH_SCAFFOLD_LANGUAGES
 from src.core.market_review_lock import (
     release_market_review_lock,
     try_acquire_market_review_lock,
@@ -659,7 +660,7 @@ def format_daily_market_context_prompt_section(
     position_cap = str(payload.get("position_cap") or "").strip()
     source = str(payload.get("source") or "").strip()
 
-    if language in ("en", "ko"):
+    if language in ENGLISH_SCAFFOLD_LANGUAGES:
         label = _REGION_LABEL_EN.get(region, region)
         lines = [
             "\n## Daily Market Context",

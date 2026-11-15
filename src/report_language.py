@@ -4,11 +4,16 @@
 from __future__ import annotations
 
 import re
+import sys
 from typing import Any, Dict, Optional
 
 from src.schemas.decision_scale import signal_key_for_score
 
-SUPPORTED_REPORT_LANGUAGES = ("zh", "en", "ko")
+SUPPORTED_REPORT_LANGUAGES = ("zh", "en", "ko", "vi")
+
+# Languages whose reports reuse the English prompt/label scaffolding and append
+# their own output directive (Korean upstream, Vietnamese in this fork).
+ENGLISH_SCAFFOLD_LANGUAGES = ("en", "ko", "vi")
 
 _REPORT_LANGUAGE_ALIASES = {
     "zh-cn": "zh",
@@ -1339,3 +1344,9 @@ def get_sentiment_label(score: int, language: Optional[str]) -> str:
     if score >= 20:
         return "悲观"
     return "极度悲观"
+
+
+# Vietnamese copy lives in src/vn (ADR-0001); register it into the tables above.
+from src.vn import report_language_vi as _report_language_vi  # noqa: E402
+
+_report_language_vi.install(sys.modules[__name__])

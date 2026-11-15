@@ -41,7 +41,8 @@ class TestSymbolConversion(unittest.TestCase):
         self.assertEqual(_to_longbridge_symbol("AAPL"), "AAPL.US")
         self.assertEqual(_to_longbridge_symbol("TSLA"), "TSLA.US")
         self.assertEqual(_to_longbridge_symbol("NVDA"), "NVDA.US")
-        self.assertEqual(_to_longbridge_symbol("GLD"), "GLD.US")
+        # 4+ letters: 3-character codes are Vietnamese Instruments in this fork (ADR-0001).
+        self.assertEqual(_to_longbridge_symbol("SPYG"), "SPYG.US")
 
     def test_us_stock_already_suffixed(self):
         self.assertEqual(_to_longbridge_symbol("AAPL.US"), "AAPL.US")
