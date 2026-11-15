@@ -1,18 +1,18 @@
 """
-妙想(MiaoXiang)金融数据源 — 东方财富妙想 Skills MX_API 封装
+MiaoXiang financial data source - wrapper for East Money MiaoXiang Skills MX_API
 
-定位：
-    补齐公开行情接口不稳定时的垂直数据块（个股资金流 / 筹码分布），
-    不参与日线 K 线主链路（`_DAILY_MARKET_FETCHER_SUPPORT` 中支持市场为空集）。
+Role:
+    Fills vertical data blocks (per-stock capital flow / chip distribution) when the public quote APIs are unstable;
+    it does not take part in the daily K-line main chain (its supported market set in `_DAILY_MARKET_FETCHER_SUPPORT` is empty).
 
-数据来源：
-    妙想量化 API（MX_API），自然语言查询返回结构化表格：
+Data source:
+    MiaoXiang quant API (MX_API); natural-language queries return structured tables:
     POST https://mkapi2.dfcfs.com/finskillshub/api/claw/query
     Header: apikey: <MX_APIKEY>
-    Body:   {"toolQuery": "<自然语言查询>"}
+    Body:   {"toolQuery": "<natural-language query>"}
 
-启用条件：
-    配置 MX_APIKEY 后由 DataFetcherManager 自动实例化。
+Enabled when:
+    MX_APIKEY is configured; DataFetcherManager then instantiates it automatically.
 """
 
 import logging
@@ -35,12 +35,12 @@ from .realtime_types import ChipDistribution
 
 logger = logging.getLogger(__name__)
 
-# 妙想 API 基础地址（国内直连）
+# MiaoXiang API base URL (direct connection within mainland China)
 MX_API_BASE_URL = "https://mkapi2.dfcfs.com/finskillshub/api/claw/query"
 
-# 查询结果缓存 TTL（秒）：同一股票的资金流/筹码短期内复用，降低配额消耗
+# Query result cache TTL (seconds): reuse capital flow / chip data for the same stock briefly to save quota
 MX_CACHE_TTL_SECONDS = 300.0
-# 相邻请求最小间隔（秒）：对自然语言接口保持礼貌
+# Minimum interval between consecutive requests (seconds): stay polite to the natural-language API
 MX_MIN_REQUEST_INTERVAL_SECONDS = 0.3
 
 
@@ -48,7 +48,7 @@ MX_MIN_REQUEST_INTERVAL_SECONDS = 0.3
 
 
 def _parse_number(text: Any) -> Optional[float]:
-    """从 '13.91' / '13.91元' / '-1.5' 等文本中提取数值。"""
+    """Extract a number from text such as '13.91' / '13.91' with a yuan (CNY) suffix / '-1.5'."""
     if text is None:
         return None
     s = str(text).strip().replace(",", "")
@@ -57,7 +57,7 @@ def _parse_number(text: Any) -> Optional[float]:
 
 
 def _parse_money_yuan(text: Any) -> Optional[float]:
-    """把 '-93.64万元' / '1.2亿' / '-493.5万' 解析为元的浮点数。"""
+    """Parse values with Chinese 10k (wan) / 100M (yi) units, e.g. '-93.64 wan yuan' / '1.2 yi' / '-493.5 wan', into a float in CNY."""
     if text is None:
         return None
     s = str(text).strip().replace(",", "")
@@ -74,24 +74,24 @@ def _parse_money_yuan(text: Any) -> Optional[float]:
 
 
 def _parse_ratio(text: Any) -> Optional[float]:
-    """把 '83.24%' 解析为 0.8324；'0.83' 视为已是小数。"""
+    """Parse '83.24%' as 0.8324; '0.83' is treated as already a fraction."""
     val = _parse_number(text)
     if val is None:
         return None
     if "%" in str(text or ""):
         val = val / 100.0
     if val > 1.0:
-        # 兜底：个别查询可能返回 83.24 但不带 % 号
+        # Fallback: some queries may return 83.24 without the % sign
         val = val / 100.0
     return val
 
 
 class MiaoxiangFetcher(BaseFetcher):
-    """妙想金融数据源（资金流 / 筹码分布补充源）"""
+    """MiaoXiang financial data source (supplementary source for capital flow / chip distribution)"""
 
     name = "MiaoxiangFetcher"
-    # 声明该补充源可服务的资金流市场；探测与预算分配据此判断,
-    # 避免把仅支持其他市场的同名方法实现(如 FutuFetcher 仅港股)误判为本市场补充源
+    # Declare which capital-flow markets this supplementary source can serve; probing and budget allocation rely on it,
+    # so a same-named method implemented only for other markets (e.g. FutuFetcher, HK only) isn't mistaken for a supplement here
     capital_flow_markets = {"cn"}
     # Admission is shared by chip/flow queries and by fresh manager instances.
     # Never queue another quota-consuming request behind an abandoned worker.
@@ -119,11 +119,11 @@ class MiaoxiangFetcher(BaseFetcher):
         return capability != "daily_data"
 
     # ------------------------------------------------------------------
-    # MX_API 客户端
+    # MX_API client
     # ------------------------------------------------------------------
 
     def _query_tables(self, cache_key: str, tool_query: str) -> List[Dict[str, Any]]:
-        """执行一次自然语言查询，返回 dataTableDTOList（带 TTL 缓存）。"""
+        """Run one natural-language query and return dataTableDTOList (with TTL cache)."""
         with self._cache_lock:
             cached = self._cache.get(cache_key)
             if cached and (time.time() - cached[0]) < self._cache_ttl:
@@ -155,9 +155,9 @@ class MiaoxiangFetcher(BaseFetcher):
             message = str(payload.get("message", ""))[:120]
             raise DataFetchError(f"妙想 API 返回错误: status={payload.get('status')} {message}")
 
-        # 兼容两种官方返回形态（有限的显式候选路径，不做递归兜底）：
-        #   A. 实测形态:  data.data.searchDataResultDTO.dataTableDTOList
-        #   B. 公开文档:  data.dataTableDTOList
+        # Supports two official response shapes (a limited set of explicit candidate paths, no recursive fallback):
+        #   A. Observed shape:  data.data.searchDataResultDTO.dataTableDTOList
+        #   B. Public docs:     data.dataTableDTOList
         tables: list = []
         data_node = payload.get("data")
         if isinstance(data_node, dict):
@@ -188,7 +188,7 @@ class MiaoxiangFetcher(BaseFetcher):
 
     @staticmethod
     def _table_rows(table_dto: Dict[str, Any]) -> List[Dict[str, str]]:
-        """把 MX 表格（headName 为行轴 + 指标列数组）转为 [{label: value}] 行列表。"""
+        """Convert an MX table (headName as the row axis + indicator column arrays) into a [{label: value}] row list."""
         table = table_dto.get("table") or {}
         name_map = MiaoxiangFetcher._table_name_map(table_dto)
         heads = table.get("headName") or []
@@ -201,7 +201,7 @@ class MiaoxiangFetcher(BaseFetcher):
                 while len(rows) <= idx:
                     rows.append({})
                 rows[idx][label] = "" if value is None else str(value)
-        # 保留每行对应日期（headName），便于资金流按日聚合
+        # Keep each row's date (headName) so capital flow can be aggregated by day
         for idx, head in enumerate(heads):
             while len(rows) <= idx:
                 rows.append({})
@@ -209,7 +209,7 @@ class MiaoxiangFetcher(BaseFetcher):
         return rows
 
     def _table_labels(self, table_dto: Dict[str, Any]) -> List[str]:
-        """返回表格包含的全部指标名（经 nameMap 映射）。"""
+        """Return all indicator names in the table (mapped via nameMap)."""
         table = table_dto.get("table") or {}
         name_map = self._table_name_map(table_dto)
         labels: List[str] = []
@@ -220,7 +220,7 @@ class MiaoxiangFetcher(BaseFetcher):
         return labels
 
     def _find_table_by_label(self, tables: List[Dict[str, Any]], keyword: str) -> Optional[Dict[str, Any]]:
-        """返回包含指定指标名的表格；命中多张时优先行数最多的（时间序列优先于当前快照）。"""
+        """Return the table containing the given indicator; if several match, prefer the one with the most rows (time series over current snapshot)."""
         best: Optional[Dict[str, Any]] = None
         best_rows = -1
         for table_dto in tables:
@@ -238,7 +238,7 @@ class MiaoxiangFetcher(BaseFetcher):
         required_keyword: str,
         wanted_keywords: List[str],
     ) -> Optional[Dict[str, Any]]:
-        """自然语言返回的表格组合不稳定：按"目标字段命中数"评分选表，行数少者优先（快照优于序列）。"""
+        """Natural-language table combinations are unstable: score tables by "target fields hit" and prefer fewer rows (snapshot over series)."""
         best: Optional[Dict[str, Any]] = None
         best_key = (-1, 10**9)
         for table_dto in tables:
@@ -253,16 +253,16 @@ class MiaoxiangFetcher(BaseFetcher):
         return best
 
     # ------------------------------------------------------------------
-    # 筹码分布
+    # Chip distribution
     # ------------------------------------------------------------------
 
     def get_chip_distribution(self, stock_code: str) -> Optional[ChipDistribution]:
         """
-        通过妙想 API 获取筹码分布核心指标：
-        获利比例 / 平均成本 / 90%集中度 / 70%集中度。
+        Fetch core chip-distribution metrics via the MiaoXiang API:
+        profit ratio / average cost / 90% concentration / 70% concentration.
 
         Returns:
-            ChipDistribution（source=miaoxiang），失败抛 DataFetchError。
+            ChipDistribution (source=miaoxiang); raises DataFetchError on failure.
         """
         stock_code = normalize_stock_code(stock_code)
         if _is_non_cn_request(stock_code) or _is_etf_code(stock_code):
@@ -311,16 +311,16 @@ class MiaoxiangFetcher(BaseFetcher):
         return chip
 
     # ------------------------------------------------------------------
-    # 个股资金流
+    # Per-stock capital flow
     # ------------------------------------------------------------------
 
     def get_capital_flow(self, stock_code: str, top_n: int = 5) -> Dict[str, Any]:
         """
-        通过妙想 API 获取个股主力资金流：
-        今日主力净流入 + 近5日/近10日主力净流入合计。
+        Fetch per-stock main-force capital flow via the MiaoXiang API:
+        today's main-force net inflow + 5-day / 10-day main-force net inflow totals.
 
         Returns:
-            与 AkshareFundamentalAdapter.get_capital_flow 同构的 payload。
+            Payload with the same shape as AkshareFundamentalAdapter.get_capital_flow.
         """
         result: Dict[str, Any] = {
             "status": "not_supported",
@@ -366,11 +366,11 @@ class MiaoxiangFetcher(BaseFetcher):
             result["errors"].append("miaoxiang: empty capital flow series")
             return result
 
-        # headName 通常按日期倒序（最新在前），这里显式按日期排序保证聚合正确
+        # headName is usually in descending date order (latest first); sort by date explicitly here so aggregation is correct
         series.sort(key=lambda item: item[0], reverse=True)
         latest = series[0][1]
-        # 窗口字段必须拿到完整交易日数据才输出,避免把部分历史合计
-        # 误标为 5日/10日净流入(稀疏历史的次新股会注入错误中期信号)
+        # Window fields are only emitted once full trading-day data is available, to avoid labelling a partial historical total
+        # as a 5-day/10-day net inflow (sparse history for recent IPOs would inject a wrong mid-term signal)
         def window_sum(size: int) -> Optional[float]:
             values = [value for _, value in series[:size]]
             if len(values) < size or any(value is None for value in values):
@@ -390,7 +390,7 @@ class MiaoxiangFetcher(BaseFetcher):
         return result
 
     # ------------------------------------------------------------------
-    # 日线主链路：显式不支持（快速失败，避免占用降级链时间）
+    # Daily K-line main chain: explicitly unsupported (fail fast so it doesn't eat fallback-chain time)
     # ------------------------------------------------------------------
 
     def _fetch_raw_data(self, stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
