@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-交易日历模块 (Issue #373 / Issue #1386 P0)
+Trading Calendar Module (Issue #373 / Issue #1386 P0)
 ===================================
 
-职责：
-1. 按市场（A股/港股/美股/日股/韩股/台股）判断当日是否为交易日
-2. 按市场时区取“今日”日期，避免服务器 UTC 导致日期错误
-3. 支持 per-stock 过滤：只分析当日开市市场的股票
-4. 提供 regular-session 市场阶段推断基线，不改变现有分析入口行为
+Responsibilities:
+1. Determine per market (A-shares / HK / US / Japan / Korea / Taiwan) whether today is a trading day
+2. Take "today" in the market's own timezone, avoiding wrong dates caused by a UTC server clock
+3. Support per-stock filtering: only analyze stocks whose market is open today
+4. Provide a baseline for inferring the regular-session market phase without changing the behavior
+   of existing analysis entry points
 
-依赖：exchange-calendars（可选，交易日判断不可用时 fail-open，阶段推断不可用时 unknown）
+Dependency: exchange-calendars (optional; trading-day checks fail open when unavailable, and phase
+    inference returns unknown when unavailable)
 """
 
 import logging

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-统一导入解析管道
+Unified Import Parsing Pipeline
 ===================================
 
 Parse CSV/Excel/clipboard text into stock items (code, name, confidence).
@@ -47,7 +47,7 @@ def _should_use_single_column_fast_path(lines: List[str]) -> bool:
     for ln in lines:
         parts = ln.split()
         if len(parts) >= 2 and is_code_like(parts[0]):
-            # Example: "600519 贵州茅台" / "HK00700 腾讯控股"
+            # Example: "600519 贵州茅台" (Kweichow Moutai) / "HK00700 腾讯控股" (Tencent Holdings)
             # First token is code-like and tail contains non-code token(s).
             if any(not is_code_like(p) for p in parts[1:]):
                 return False

@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-服务层模块初始化
+Service Layer Module Initialization
 ===================================
 
-职责：
-1. 声明可导出的服务类（延迟导入，避免启动时拉入 LLM 等重依赖）
+Responsibilities:
+1. Declare the exportable service classes (lazy imports, to avoid pulling in heavy dependencies such
+   as the LLM at startup)
 
-使用方式：
-    直接从子模块导入，例如:
+Usage:
+    Import directly from the submodule, for example:
     from src.services.history_service import HistoryService
 """
 
 
 def __getattr__(name: str):
-    """延迟导入：仅在通过 src.services.X 访问时才加载对应子模块。"""
+    """Lazy import: load the matching submodule only when accessed through src.services.X."""
     _lazy_map = {
         "AnalysisService": "src.services.analysis_service",
         "BacktestService": "src.services.backtest_service",
