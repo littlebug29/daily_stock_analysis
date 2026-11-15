@@ -39,7 +39,7 @@
 | [LLM 服务商配置指南](llm-providers.md) | Provider 预设、Actions 映射、错误分类和诊断建议 |
 | [LiteLLM YAML 示例](examples/litellm_config.example.yaml) | LiteLLM 多渠道配置示例 |
 | [Grok Bot Skill 示例](examples/grok_bot/README.md) | 给 Grok Bot 粘贴的最小 Skill，调用现有 REST |
-| [通知能力基线](notifications.md) | 企业微信、飞书、Telegram、Discord、Slack、邮件等通知渠道配置 |
+| [通知能力基线](notifications.md) | Telegram、Discord、Slack、邮件等通知渠道配置 |
 | [Tushare 股票列表指南](TUSHARE_STOCK_LIST_GUIDE.md) | Tushare 股票列表相关配置和使用说明 |
 
 ## 使用专题
@@ -48,7 +48,7 @@
 | --- | --- |
 | [自选股变化状态与下一步](watchlist-next-action.md) | 首页自选股列表的变化、状态、下一步三段信号、映射规则和后续扩展边界 |
 | [Bot 命令与接入](bot-command.md) | Bot 命令、Webhook、平台接入和回调说明 |
-| [Bot 平台配置](bot/) | 飞书、钉钉、Discord 等 Bot 配置截图和补充说明 |
+| [Bot 平台配置](bot/) | Discord 等 Bot 配置截图和补充说明 |
 | [实时告警中心](alerts.md) | EventMonitor 基线、Web 规则管理、通知结果、冷却状态和 Phase 边界 |
 | [个股研究聚合 API](stock-profile-api.md) | 单一 stock-profile 契约、分块质量状态、代码归一与后续 Web 边界 |
 | [DecisionSignal 决策信号专题](decision-signals.md) | AI 建议池字段语义、API、Web 展示、告警/通知/组合风险联动、后验评估、脱敏、迁移与回滚 |

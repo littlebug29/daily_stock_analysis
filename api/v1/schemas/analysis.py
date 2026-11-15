@@ -79,7 +79,7 @@ class AnalyzeRequest(BaseModel):
     )
     notify: bool = Field(
         True,
-        description="是否发送推送通知（Telegram/企业微信等）"
+        description="是否发送推送通知（Telegram/Discord 等）"
     )
     report_language: Optional[Literal["zh", "en", "ko"]] = Field(
         None,

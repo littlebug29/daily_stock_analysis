@@ -15,11 +15,7 @@ from urllib.parse import urlparse
 import requests
 
 from src.config import Config
-from src.formatters import (
-    chunk_content_by_max_bytes,
-    slice_at_max_bytes,
-    strip_hidden_markdown_metadata,
-)
+from src.formatters import strip_hidden_markdown_metadata
 
 
 logger = logging.getLogger(__name__)
@@ -54,7 +50,6 @@ class CustomWebhookSender:
         默认发送格式：{"text": "消息内容", "content": "消息内容"}
         
         适用于：
-        - 钉钉机器人
         - Discord Webhook
         - Slack Incoming Webhook
         - 自建通知服务
@@ -75,30 +70,8 @@ class CustomWebhookSender:
         for i, url in enumerate(self._custom_webhook_urls):
             try:
                 # 通用 JSON 格式，兼容大多数 Webhook
-                # 钉钉格式: {"msgtype": "text", "text": {"content": "xxx"}}
                 # Slack 格式: {"text": "xxx"}
                 # Discord 格式: {"content": "xxx"}
-                
-                # 钉钉机器人对 body 有字节上限（约 20000 bytes），超长需要分批发送
-                if self._is_dingtalk_webhook(url):
-                    templated_payload = self._build_custom_webhook_template_payload(content)
-                    if templated_payload is not None:
-                        if self._post_custom_webhook(url, templated_payload, timeout=30):
-                            logger.info(f"自定义 Webhook {i+1}（钉钉模板）推送成功")
-                            success_count += 1
-                        elif self._send_dingtalk_chunked(url, content, max_bytes=20000):
-                            logger.info(f"自定义 Webhook {i+1}（钉钉模板失败，回退分批）推送成功")
-                            success_count += 1
-                        else:
-                            logger.error(f"自定义 Webhook {i+1}（钉钉模板）推送失败")
-                    elif self._send_dingtalk_chunked(url, content, max_bytes=20000):
-                        logger.info(f"自定义 Webhook {i+1}（钉钉）推送成功")
-                        success_count += 1
-                    else:
-                        logger.error(f"自定义 Webhook {i+1}（钉钉）推送失败")
-                    continue
-
-                # 其他 Webhook：单次发送
                 payload = self._build_custom_webhook_payload(url, content)
                 if self._post_custom_webhook(url, payload, timeout=30):
                     logger.info(f"自定义 Webhook {i+1} 推送成功")
@@ -299,15 +272,6 @@ class CustomWebhookSender:
 
         url_lower = url.lower()
         
-        # 钉钉机器人
-        if 'dingtalk' in url_lower or 'oapi.dingtalk.com' in url_lower:
-            return {
-                "msgtype": "markdown",
-                "markdown": {
-                    "title": "股票分析报告",
-                    "text": sanitized_content
-                }
-            }
         
         # Discord Webhook
         if 'discord.com/api/webhooks' in url_lower or 'discordapp.com/api/webhooks' in url_lower:
@@ -374,51 +338,6 @@ class CustomWebhookSender:
             return None
         return payload
     
-    def _send_dingtalk_chunked(self, url: str, content: str, max_bytes: int = 20000) -> bool:
-        import time as _time
-        content = strip_hidden_markdown_metadata(content).strip()
-
-        # 为 payload 开销预留空间，避免 body 超限
-        budget = max(1000, max_bytes - 1500)
-        chunks = chunk_content_by_max_bytes(content, budget)
-        if not chunks:
-            return False
-
-        total = len(chunks)
-        ok = 0
-
-        for idx, chunk in enumerate(chunks):
-            marker = f"\n\n📄 *({idx+1}/{total})*" if total > 1 else ""
-            payload = {
-                "msgtype": "markdown",
-                "markdown": {
-                    "title": "股票分析报告",
-                    "text": chunk + marker,
-                },
-            }
-
-            # 如果仍超限（极端情况下），再按字节硬截断一次
-            body_bytes = len(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
-            if body_bytes > max_bytes:
-                hard_budget = max(200, budget - (body_bytes - max_bytes) - 200)
-                payload["markdown"]["text"], _ = slice_at_max_bytes(payload["markdown"]["text"], hard_budget)
-
-            if self._post_custom_webhook(url, payload, timeout=30):
-                ok += 1
-            else:
-                logger.error(f"钉钉分批发送失败: 第 {idx+1}/{total} 批")
-
-            if idx < total - 1:
-                _time.sleep(1)
-
-        return ok == total
-
-    
-    @staticmethod
-    def _is_dingtalk_webhook(url: str) -> bool:
-        url_lower = (url or "").lower()
-        return 'dingtalk' in url_lower or 'oapi.dingtalk.com' in url_lower
-
     @staticmethod
     def _is_bark_webhook(url: str) -> bool:
         # 按解析后的主机名识别，避免路径/查询参数中含 api.day.app 的非 Bark 地址被误判

@@ -14,7 +14,7 @@ _MISSING_STOCK_MESSAGE = "未配置 STOCK_LIST。请设置至少一个股票代�
 def _config():
     issues = [
         ConfigIssue(severity="error", message=_MISSING_STOCK_MESSAGE, field="STOCK_LIST"),
-        ConfigIssue(severity="warning", message="未配置通知渠道，将不发送推送通知", field="WECHAT_WEBHOOK_URL"),
+        ConfigIssue(severity="warning", message="未配置通知渠道，将不发送推送通知", field="TELEGRAM_BOT_TOKEN"),
         ConfigIssue(severity="error", message="no llm", field="LITELLM_MODEL"),
     ]
     return SimpleNamespace(validate_structured=lambda: issues)

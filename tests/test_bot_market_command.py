@@ -19,7 +19,7 @@ from bot.models import BotMessage, ChatType
 
 def _make_message() -> BotMessage:
     return BotMessage(
-        platform="feishu",
+        platform="telegram",
         message_id="m1",
         user_id="u1",
         user_name="tester",

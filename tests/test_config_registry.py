@@ -68,87 +68,6 @@ class TestSlackFieldsRegistered(unittest.TestCase):
                             f"{key} should appear before Pushover")
 
 
-class TestFeishuWebhookFieldsRegistered(unittest.TestCase):
-    """Feishu webhook security fields must be registered for the settings UI."""
-
-    _FEISHU_KEYS = (
-        "FEISHU_WEBHOOK_URL",
-        "FEISHU_WEBHOOK_SECRET",
-        "FEISHU_WEBHOOK_KEYWORD",
-    )
-
-    def test_field_definitions_exist(self):
-        for key in self._FEISHU_KEYS:
-            field = get_field_definition(key)
-            self.assertEqual(field["category"], "notification", f"{key} category")
-            self.assertNotEqual(
-                field["display_order"], 9000,
-                f"{key} should be explicitly registered, not inferred",
-            )
-
-    def test_secret_is_sensitive(self):
-        field = get_field_definition("FEISHU_WEBHOOK_SECRET")
-        self.assertTrue(field["is_sensitive"])
-        self.assertEqual(field["ui_control"], "password")
-
-    def test_keyword_is_not_sensitive(self):
-        field = get_field_definition("FEISHU_WEBHOOK_KEYWORD")
-        self.assertFalse(field["is_sensitive"])
-        self.assertEqual(field["ui_control"], "text")
-
-    def test_webhook_url_uses_url_validation(self):
-        field = get_field_definition("FEISHU_WEBHOOK_URL")
-        self.assertEqual(field["validation"]["item_type"], "url")
-        self.assertIn("https", field["validation"]["allowed_schemes"])
-
-    def test_schema_response_includes_feishu_webhook_fields(self):
-        schema = build_schema_response()
-        notification_cat = next(
-            (c for c in schema["categories"] if c["category"] == "notification"),
-            None,
-        )
-        self.assertIsNotNone(notification_cat, "notification category missing")
-        field_keys = {f["key"] for f in notification_cat["fields"]}
-        for key in self._FEISHU_KEYS:
-            self.assertIn(key, field_keys, f"{key} missing from schema response")
-
-
-class TestAstrBotFieldsRegistered(unittest.TestCase):
-    """AstrBot config keys must be explicitly registered for settings UI."""
-
-    _ASTRBOT_KEYS = ("ASTRBOT_URL", "ASTRBOT_TOKEN")
-
-    def test_field_definitions_exist(self):
-        for key in self._ASTRBOT_KEYS:
-            field = get_field_definition(key)
-            self.assertEqual(field["category"], "notification", f"{key} category")
-            self.assertNotEqual(
-                field["display_order"], 9000,
-                f"{key} should be explicitly registered, not inferred",
-            )
-
-    def test_url_and_token_are_sensitive_password_controls(self):
-        for key in self._ASTRBOT_KEYS:
-            field = get_field_definition(key)
-            self.assertTrue(field["is_sensitive"], f"{key} should be sensitive")
-            self.assertEqual(field["ui_control"], "password")
-
-    def test_url_uses_url_validation(self):
-        field = get_field_definition("ASTRBOT_URL")
-        self.assertEqual(field["validation"]["item_type"], "url")
-        self.assertIn("https", field["validation"]["allowed_schemes"])
-
-    def test_schema_response_includes_astrbot_fields(self):
-        schema = build_schema_response()
-        notification_cat = next(
-            (c for c in schema["categories"] if c["category"] == "notification"),
-            None,
-        )
-        self.assertIsNotNone(notification_cat, "notification category missing")
-        field_keys = {f["key"] for f in notification_cat["fields"]}
-        for key in self._ASTRBOT_KEYS:
-            self.assertIn(key, field_keys, f"{key} missing from schema response")
-
 
 class TestScreeningFieldsRegistered(unittest.TestCase):
     def test_builtin_screening_toggle_is_registered(self):
@@ -362,7 +281,6 @@ class TestSettingsHelpMetadata(unittest.TestCase):
         "GENERATION_FALLBACK_BACKEND",
         "LITELLM_MODEL",
         "LLM_CHANNELS",
-        "FEISHU_WEBHOOK_URL",
         "WEBUI_HOST",
         "AGENT_GENERATION_BACKEND",
         "AGENT_LITELLM_MODEL",
@@ -371,7 +289,6 @@ class TestSettingsHelpMetadata(unittest.TestCase):
         "REALTIME_SOURCE_PRIORITY",
         "TAVILY_API_KEYS",
         "NEWS_STRATEGY_PROFILE",
-        "WECHAT_WEBHOOK_URL",
         "EMAIL_RECEIVERS",
         "SCHEDULE_TIME",
         "ADMIN_AUTH_ENABLED",
@@ -434,8 +351,6 @@ class TestSettingsHelpMetadata(unittest.TestCase):
         "MARKET_REVIEW_REGION",
         "MARKET_REVIEW_COLOR_SCHEME",
         # Issue #1512: stream, log, and WebUI startup fields
-        "DINGTALK_STREAM_ENABLED",
-        "FEISHU_STREAM_ENABLED",
         "LOG_DIR",
         "WEBUI_ENABLED",
         "WEBUI_AUTO_BUILD",
@@ -496,8 +411,6 @@ class TestSettingsHelpMetadata(unittest.TestCase):
             "WEBUI_ENABLED",
             "WEBUI_AUTO_BUILD",
             "LOG_DIR",
-            "DINGTALK_STREAM_ENABLED",
-            "FEISHU_STREAM_ENABLED",
             "LOG_LEVEL",
         )
         for key in restart_required_keys:
@@ -527,23 +440,6 @@ class TestSettingsHelpMetadata(unittest.TestCase):
 class TestIssue1512SettingsFields(unittest.TestCase):
     """Issue #1512 visible fields must be explicitly registered."""
 
-    def test_stream_fields_are_registered_as_notification_switches(self) -> None:
-        expected = {
-            "FEISHU_STREAM_ENABLED": 17,
-            "DINGTALK_STREAM_ENABLED": 35,
-        }
-        for key, display_order in expected.items():
-            field = get_field_definition(key)
-            self.assertEqual(field["category"], "notification")
-            self.assertEqual(field["data_type"], "boolean")
-            self.assertEqual(field["ui_control"], "switch")
-            self.assertEqual(field["default_value"], "false")
-            self.assertEqual(field["display_order"], display_order)
-            self.assertTrue(field.get("help_key"))
-            self.assertTrue(field.get("examples"))
-            self.assertTrue(field.get("docs"))
-            self.assertIn("not_webhook_delivery", field.get("warning_codes", []))
-            self.assertIn("restart_required", field.get("warning_codes", []))
 
     def test_system_runtime_fields_are_registered_with_restart_boundary(self) -> None:
         expected = {
@@ -838,46 +734,6 @@ class TestMarketReviewFieldsRegistered(unittest.TestCase):
         self.assertIn("MARKET_REVIEW_COLOR_SCHEME", field_keys)
         self.assertIn("DAILY_MARKET_CONTEXT_ENABLED", field_keys)
         self.assertIn("MARKET_REVIEW_REGION", field_keys)
-
-
-class TestDingTalkWebhookFieldsRegistered(unittest.TestCase):
-    """DingTalk group robot fields follow the visible settings contract."""
-
-    def test_dingtalk_webhook_fields_are_visible_sensitive_and_documented(self):
-        expected = {
-            "DINGTALK_WEBHOOK_URL": "settings.notification.DINGTALK_WEBHOOK_URL",
-            "DINGTALK_SECRET": "settings.notification.DINGTALK_SECRET",
-        }
-        for key, help_key in expected.items():
-            field = get_field_definition(key)
-            self.assertEqual(field["category"], "notification")
-            self.assertEqual(field["ui_control"], "password")
-            self.assertTrue(field["is_sensitive"])
-            self.assertEqual(field["help_key"], help_key)
-            self.assertTrue(field["examples"])
-            self.assertTrue(field["docs"])
-            self.assertNotIn(key, WEB_SETTINGS_HIDDEN_FROM_UI)
-
-    def test_dingtalk_webhook_url_has_url_validation(self):
-        field = get_field_definition("DINGTALK_WEBHOOK_URL")
-        self.assertEqual(field["validation"]["item_type"], "url")
-        self.assertEqual(field["validation"]["allowed_schemes"], ["http", "https"])
-
-    def test_schema_response_includes_dingtalk_webhook_fields(self):
-        schema = build_schema_response()
-        notification = next(
-            category
-            for category in schema["categories"]
-            if category["category"] == "notification"
-        )
-        fields = {field["key"]: field for field in notification["fields"]}
-        self.assertIn("DINGTALK_WEBHOOK_URL", fields)
-        self.assertIn("DINGTALK_SECRET", fields)
-        self.assertEqual(
-            fields["DINGTALK_WEBHOOK_URL"]["help_key"],
-            "settings.notification.DINGTALK_WEBHOOK_URL",
-        )
-
 
 
 

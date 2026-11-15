@@ -164,6 +164,7 @@ def _is_sensitive_url(url: str) -> bool:
 
 
 def _is_webhook_url(hostname: str, path: str) -> bool:
+    # 飞书/钉钉/企业微信渠道已删除，但仍识别其 Webhook 地址以便脱敏旧配置中残留的 URL。
     hostname = str(hostname or "").lower().strip(".")
     normalized_path = f"/{path.lstrip('/').lower()}"
     path_segments = [segment for segment in normalized_path.split("/") if segment]

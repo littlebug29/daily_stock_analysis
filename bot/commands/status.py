@@ -112,8 +112,6 @@ class StatusCommand(BotCommand):
         status["search_searxng"] = config.has_searxng_enabled()
         
         # 通知渠道状态
-        status["notify_wechat"] = bool(config.wechat_webhook_url)
-        status["notify_feishu"] = bool(config.feishu_webhook_url)
         status["notify_telegram"] = bool(config.telegram_bot_token and config.telegram_chat_id)
         status["notify_email"] = bool(config.email_sender and config.email_password)
         status["notify_custom"] = bool(getattr(config, "custom_webhook_urls", []))
@@ -132,12 +130,8 @@ class StatusCommand(BotCommand):
             )
         )
         status["notify_push"] = bool(
-            getattr(config, "pushplus_token", None)
-            or (
-                getattr(config, "pushover_user_key", None)
-                and getattr(config, "pushover_api_token", None)
-            )
-            or getattr(config, "serverchan3_sendkey", None)
+            getattr(config, "pushover_user_key", None)
+            and getattr(config, "pushover_api_token", None)
         )
         
         return status
@@ -189,14 +183,12 @@ class StatusCommand(BotCommand):
             f"• SearXNG: {icon(status['search_searxng'])}",
             "",
             "**📢 通知渠道**",
-            f"• 企业微信: {icon(status['notify_wechat'])}",
-            f"• 飞书: {icon(status['notify_feishu'])}",
             f"• Telegram: {icon(status['notify_telegram'])}",
             f"• 邮件: {icon(status['notify_email'])}",
             f"• 自定义 Webhook: {icon(status['notify_custom'])}",
             f"• Discord: {icon(status['notify_discord'])}",
             f"• Slack: {icon(status['notify_slack'])}",
-            f"• PushPlus/Pushover/Server酱3: {icon(status['notify_push'])}",
+            f"• Pushover: {icon(status['notify_push'])}",
         ])
         
         # AI 服务总体状态
