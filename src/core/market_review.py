@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-股票智能分析系统 - 大盘复盘模块（支持 A 股 / 港股 / 美股 / 日本 / 韩国）
+Stock Intelligent Analysis System - Market Review Module (supports A-shares / HK / US / Japan / Korea)
 ===================================
 
-职责：
-1. 根据 MARKET_REVIEW_REGION 配置选择市场区域（cn / hk / us / jp / kr / both）
-2. 执行大盘复盘分析并生成复盘报告
-3. 保存和发送复盘报告
+Responsibilities:
+1. Select market regions according to MARKET_REVIEW_REGION (cn / hk / us / jp / kr / both)
+2. Run the market review analysis and generate the review report
+3. Save and send the review report
 """
 
 import logging
@@ -186,23 +186,28 @@ def run_market_review(
     trigger_source: str = "cli",
 ) -> Optional[str] | Optional[MarketReviewRunResult]:
     """
-    执行大盘复盘分析
+    Run the market review analysis.
 
     Args:
-        notifier: 通知服务
-        analyzer: AI分析器（可选）
-        search_service: 搜索服务（可选）
-        config: 本次复盘使用的配置（可选，未传时读取全局配置）
-        send_notification: 是否发送通知
-        merge_notification: 是否合并推送（跳过本次推送，由 main 层合并个股+大盘后统一发送，Issue #190）
-        override_region: 覆盖 config 的 market_review_region（Issue #373 交易日过滤后有效子集）
-        query_id: 历史记录关联 ID；API 后台任务会传入 task_id，CLI/Bot 为空时自动生成
-        save_report_file: 是否保存 Markdown 文件；上下文生成路径可关闭以避免多区域临时复盘互相覆盖
-        persist_history: 是否写入 analysis_history；预热路径可关闭以避免覆盖用户可见的同日大盘复盘记录
-        trigger_source: 触发来源，用于日志排障（cli/schedule/api/bot/service 等）
+        notifier: Notification service
+        analyzer: AI analyzer (optional)
+        search_service: Search service (optional)
+        config: Config used for this review (optional; the global config is read when not given)
+        send_notification: Whether to send a notification
+        merge_notification: Whether to merge pushes (skip this push; the main layer merges stock +
+            market reports and sends them together, Issue #190)
+        override_region: Overrides config.market_review_region (the effective subset after Issue
+            #373 trading-day filtering)
+        query_id: History record correlation ID; API background tasks pass task_id, and it is
+            auto-generated when empty for CLI/Bot
+        save_report_file: Whether to save the Markdown file; the context-generation path can disable
+            it so that temporary multi-region reviews do not overwrite each other
+        persist_history: Whether to write to analysis_history; the warm-up path can disable it so it
+            does not overwrite the user-visible same-day market review record
+        trigger_source: Trigger source, used for log troubleshooting (cli/schedule/api/bot/service, etc.)
 
     Returns:
-        复盘报告文本
+        Review report text
     """
     runtime_config = config or get_config()
     history_query_id = query_id or f"market_review_{uuid.uuid4().hex}"
@@ -223,7 +228,7 @@ def run_market_review(
 
     try:
         if len(run_markets) > 1:
-            # 多市场顺序执行，合并报告
+            # Run multiple markets sequentially and merge the reports
             parts = []
             market_light_snapshots: Dict[str, Dict[str, Any]] = {}
             market_review_payloads: Dict[str, Dict[str, Any]] = {}
@@ -315,7 +320,7 @@ def run_market_review(
                 review_report=review_report,
             )
             if save_report_file:
-                # 保存报告到文件
+                # Save the report to a file
                 date_str = datetime.now().strftime('%Y%m%d')
                 report_filename = f"market_review_{date_str}.md"
                 filepath = notifier.save_report_to_file(
@@ -342,7 +347,7 @@ def run_market_review(
                     market_review_payload=market_review_payload,
                 )
             
-            # 推送通知（合并模式下跳过，由 main 层统一发送）
+            # Send the notification (skipped in merge mode; the main layer sends it in one go)
             if merge_notification and send_notification:
                 logger.info(
                     "[MarketReview] component=market_review action=skip_standalone_notification "
@@ -359,7 +364,7 @@ def run_market_review(
                     attempts=0,
                 )
             elif send_notification and notifier.is_available():
-                # 添加标题
+                # Add the title
                 report_content = _render_market_review_payload_markdown(
                     market_review_payload,
                     wrapper_title=review_text["push_title"],

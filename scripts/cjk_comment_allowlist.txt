@@ -10,3 +10,18 @@
 # Examples:
 #   src/legacy/vendor_adapter.py | vendored upstream code, keep as-is
 #   tests/test_parser.py:42 | comment documents the exact Chinese input under test
+
+# Issue #28 (src/core, src/services, src/repositories): each line quotes the exact
+# Chinese keyword, stock name or placeholder the code matches or emits, with an English gloss.
+src/core/backtest_engine.py:489 | quotes the Chinese recommendation keyword matched by exact-label tier
+src/core/backtest_engine.py:528 | quotes a Chinese phrase that the CJK substring branch must match
+src/services/empty_news.py:93 | quotes the exact Chinese heading/placeholder emitted by format_intel_report()
+src/services/import_parser.py:50 | quotes the exact Chinese "code name" import line shape being parsed
+src/services/import_parser.py:111 | quotes the exact Chinese dirty-row input being guarded against
+src/services/name_to_code_resolver.py:106-109 | full-width and embedded-space Chinese names that normalization exists for
+src/services/name_to_code_resolver.py:570-573 | Chinese substring and one-character-typo examples of the matching chain
+src/services/name_to_code_resolver.py:594-595 | Chinese inputs behind the pinyin substring collision being explained
+src/services/name_to_code_resolver.py:668-670 | docstring examples of real Chinese inputs and the Stock entries returned
+src/services/name_to_code_resolver.py:675 | full-width and embedded-space Chinese names that query normalization handles
+src/services/name_to_code_resolver.py:841 | two-character Chinese input that motivates skipping fuzzy matching
+src/services/name_to_code_resolver.py:852 | Chinese one-character typo the fuzzy fallback fixes

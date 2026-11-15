@@ -13,13 +13,13 @@ helpers are kept untouched so existing ``STOCK_LIST`` callers don't drift.
 Three core contracts are pinned by this module and the regression tests in
 ``tests/test_stock_list_parser.py``:
 
-1. **前缀白名单指数** — a prefixed token whose prefix is ``sh``/``sz`` and
+1. **Prefix-whitelisted index** — a prefixed token whose prefix is ``sh``/``sz`` and
    whose bare code is registered in :class:`IndexRegistry` is parsed as an
    ``index``.
-2. **裸码默认个股** — a bare numeric code without any prefix always parses
+2. **Bare code defaults to stock** — a bare numeric code without any prefix always parses
    as a ``stock`` regardless of whether the same code happens to belong to
    a known index (e.g. ``"000300"`` is a stock, ``"sh000300"`` is an index).
-3. **前缀未命中降级为股票** — a prefixed token whose prefix is not a
+3. **Unmatched prefix degrades to stock** — a prefixed token whose prefix is not a
    recognized ``sh``/``sz`` index prefix, or whose bare code is not in the
    index registry, degrades to a ``stock`` rather than raising.
 
